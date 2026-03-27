@@ -19,7 +19,8 @@ const tools = [
     icon: <ScanIcon />,
     title: "Security Headers Scanner",
     description: "Enter any URL. Get an instant security grade with actionable fixes.",
-    status: "coming-soon" as const,
+    status: "live" as const,
+    href: "/tools/headers-scanner",
   },
   {
     icon: <BookIcon />,

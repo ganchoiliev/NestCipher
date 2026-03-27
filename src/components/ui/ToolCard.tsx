@@ -1,5 +1,6 @@
 "use client";
 
+import Link from "next/link";
 import { motion } from "framer-motion";
 
 interface ToolCardProps {
@@ -10,17 +11,9 @@ interface ToolCardProps {
   href?: string;
 }
 
-export function ToolCard({ icon, title, description, status }: ToolCardProps) {
-  return (
-    <motion.div
-      whileHover={{
-        scale: 1.02,
-        borderColor: "rgba(0, 212, 170, 0.3)",
-        boxShadow: "0 0 30px rgba(0, 212, 170, 0.1)",
-      }}
-      transition={{ type: "spring", stiffness: 300, damping: 20 }}
-      className="group relative cursor-pointer rounded-xl border border-border-subtle bg-bg-card p-6 flex flex-col gap-4"
-    >
+export function ToolCard({ icon, title, description, status, href }: ToolCardProps) {
+  const content = (
+    <>
       <div className="flex items-center justify-between">
         <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-bg-elevated text-accent">
           {icon}
@@ -37,6 +30,27 @@ export function ToolCard({ icon, title, description, status }: ToolCardProps) {
       </div>
       <h3 className="font-mono text-lg font-semibold text-text-primary">{title}</h3>
       <p className="text-sm text-text-secondary leading-relaxed">{description}</p>
-    </motion.div>
+    </>
   );
+
+  const motionProps = {
+    whileHover: {
+      scale: 1.02,
+      borderColor: "rgba(0, 212, 170, 0.3)",
+      boxShadow: "0 0 30px rgba(0, 212, 170, 0.1)",
+    },
+    transition: { type: "spring" as const, stiffness: 300, damping: 20 },
+    className:
+      "group relative cursor-pointer rounded-xl border border-border-subtle bg-bg-card p-6 flex flex-col gap-4",
+  };
+
+  if (href) {
+    return (
+      <Link href={href}>
+        <motion.div {...motionProps}>{content}</motion.div>
+      </Link>
+    );
+  }
+
+  return <motion.div {...motionProps}>{content}</motion.div>;
 }
