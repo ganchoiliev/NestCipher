@@ -1,0 +1,102 @@
+@import "tailwindcss";
+
+/* ── Design Tokens ── */
+:root {
+  --bg-primary: #F8F9FA;
+  --bg-card: #FFFFFF;
+  --bg-elevated: #F1F3F5;
+  --accent: #00B894;
+  --accent-hover: #009B7D;
+  --accent-glow: #00D4AA;
+  --warning: #F59E0B;
+  --danger: #EF4444;
+  --text-primary: #1A1A25;
+  --text-secondary: #6B7280;
+  --text-muted: #9CA3AF;
+  --border-subtle: rgba(0, 0, 0, 0.06);
+  --border-hover: rgba(0, 0, 0, 0.12);
+  --background: var(--bg-primary);
+  --foreground: var(--text-primary);
+}
+
+[data-theme="dark"],
+.dark {
+  --bg-primary: #0A0A0F;
+  --bg-card: #12121A;
+  --bg-elevated: #1A1A25;
+  --accent: #00D4AA;
+  --accent-hover: #00B894;
+  --accent-glow: #00F5C8;
+  --warning: #F59E0B;
+  --danger: #EF4444;
+  --text-primary: #F1F1F3;
+  --text-secondary: #9CA3AF;
+  --text-muted: #6B7280;
+  --border-subtle: rgba(255, 255, 255, 0.06);
+  --border-hover: rgba(255, 255, 255, 0.12);
+  --background: var(--bg-primary);
+  --foreground: var(--text-primary);
+}
+
+@theme inline {
+  --color-background: var(--background);
+  --color-foreground: var(--foreground);
+  --color-bg-primary: var(--bg-primary);
+  --color-bg-card: var(--bg-card);
+  --color-bg-elevated: var(--bg-elevated);
+  --color-accent: var(--accent);
+  --color-accent-hover: var(--accent-hover);
+  --color-accent-glow: var(--accent-glow);
+  --color-warning: var(--warning);
+  --color-danger: var(--danger);
+  --color-text-primary: var(--text-primary);
+  --color-text-secondary: var(--text-secondary);
+  --color-text-muted: var(--text-muted);
+  --color-border-subtle: var(--border-subtle);
+  --color-border-hover: var(--border-hover);
+  --font-sans: var(--font-geist-sans);
+  --font-mono: var(--font-geist-mono);
+}
+
+/* ── Base ── */
+body {
+  background: var(--background);
+  color: var(--foreground);
+  font-family: var(--font-geist-sans), system-ui, sans-serif;
+}
+
+/* ── Shimmer animation for logo ── */
+@keyframes shimmer {
+  0% { background-position: -200% center; }
+  100% { background-position: 200% center; }
+}
+
+.logo-shimmer:hover {
+  background: linear-gradient(
+    90deg,
+    var(--text-primary) 0%,
+    var(--accent-glow) 40%,
+    var(--accent) 60%,
+    var(--text-primary) 100%
+  );
+  background-size: 200% auto;
+  background-clip: text;
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  animation: shimmer 1.5s ease-in-out infinite;
+}
+
+/* ── Reduced motion ── */
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
+}
+
+/* ── Scrollbar (dark) ── */
+.dark ::-webkit-scrollbar { width: 8px; }
+.dark ::-webkit-scrollbar-track { background: var(--bg-primary); }
+.dark ::-webkit-scrollbar-thumb { background: var(--bg-elevated); border-radius: 4px; }
+.dark ::-webkit-scrollbar-thumb:hover { background: var(--text-muted); }
