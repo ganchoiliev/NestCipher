@@ -42,8 +42,8 @@ export function Footer() {
           <div className="flex items-center gap-4">
             <span className="text-text-muted text-xs">
               Built by{" "}
-              <a href="#" className="text-text-secondary hover:text-accent transition-colors">
-                Your Agency
+              <a href="https://brushly.uk" target="_blank" rel="noopener noreferrer" className="text-text-secondary hover:text-accent transition-colors">
+                Brushly
               </a>
             </span>
             <div className="flex items-center gap-3 text-text-muted">

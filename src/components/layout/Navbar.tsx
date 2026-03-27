@@ -13,15 +13,15 @@ const navLinks = [
 ];
 
 export function Navbar() {
-  const scrolled = useScrollPosition(20);
+  const scrolled = useScrollPosition(50);
   const [mobileOpen, setMobileOpen] = useState(false);
 
   return (
     <nav
-      className={`fixed top-0 left-0 right-0 z-50 transition-all duration-300 ${
+      className={`fixed top-0 left-0 right-0 z-50 transition-all duration-200 ease-out ${
         scrolled
-          ? "bg-bg-primary/80 backdrop-blur-xl border-b border-border-subtle shadow-lg shadow-black/5"
-          : "bg-transparent"
+          ? "bg-[#0A0A0F]/80 backdrop-blur-xl border-b border-white/[0.06]"
+          : "bg-transparent border-b border-transparent"
       }`}
     >
       <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
@@ -71,24 +71,24 @@ export function Navbar() {
       <AnimatePresence>
         {mobileOpen && (
           <motion.div
-            initial={{ opacity: 0, x: "100%" }}
-            animate={{ opacity: 1, x: 0 }}
-            exit={{ opacity: 0, x: "100%" }}
-            transition={{ type: "spring", damping: 25, stiffness: 200 }}
-            className="fixed inset-0 top-16 z-40 bg-bg-primary/95 backdrop-blur-xl md:hidden"
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            transition={{ duration: 0.2, ease: "easeOut" }}
+            className="fixed inset-0 top-16 z-50 bg-[#0A0A0F] md:hidden"
           >
-            <div className="flex flex-col items-center gap-8 pt-16">
+            <div className="flex flex-col w-full px-6 pt-12 gap-2">
               {navLinks.map((link, i) => (
                 <motion.div
                   key={link.href}
-                  initial={{ opacity: 0, y: 20 }}
+                  initial={{ opacity: 0, y: 12 }}
                   animate={{ opacity: 1, y: 0 }}
-                  transition={{ delay: i * 0.1 }}
+                  transition={{ delay: i * 0.08 }}
                 >
                   <Link
                     href={link.href}
                     onClick={() => setMobileOpen(false)}
-                    className="text-xl text-text-primary hover:text-accent transition-colors"
+                    className="block w-full py-4 text-lg text-text-primary hover:text-accent transition-colors"
                   >
                     {link.label}
                   </Link>

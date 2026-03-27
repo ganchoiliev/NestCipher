@@ -32,7 +32,7 @@ export default function Home() {
   return (
     <>
       {/* ── Hero ── */}
-      <section className="relative flex min-h-[calc(100vh-4rem)] items-center justify-center overflow-hidden">
+      <section className="relative flex min-h-[80vh] items-center justify-center overflow-hidden">
         <HeroCanvas />
         <div className="relative z-10 mx-auto max-w-4xl px-4 text-center">
           <motion.h1
@@ -75,11 +75,17 @@ export default function Home() {
       </section>
 
       {/* ── Tools Grid ── */}
-      <section className="mx-auto max-w-7xl px-4 py-24 sm:px-6 lg:px-8">
-        <div className="mb-12 flex items-center gap-4">
+      <section className="mx-auto max-w-7xl px-4 py-16 sm:py-20 sm:px-6 lg:px-8">
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          whileInView={{ opacity: 1, y: 0 }}
+          viewport={{ once: true, margin: "-50px" }}
+          transition={{ duration: 0.5 }}
+          className="mb-12 flex items-center gap-4"
+        >
           <h2 className="font-mono text-2xl font-bold sm:text-3xl">Security Toolkit</h2>
           <div className="flex-1 h-px bg-border-subtle" />
-        </div>
+        </motion.div>
         <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
           {tools.map((tool, i) => (
             <motion.div
@@ -96,8 +102,14 @@ export default function Home() {
       </section>
 
       {/* ── Newsletter ── */}
-      <section id="newsletter" className="mx-auto max-w-7xl px-4 py-24 sm:px-6 lg:px-8">
-        <div className="rounded-2xl border border-border-subtle bg-bg-card p-8 sm:p-12 text-center">
+      <section id="newsletter" className="mx-auto max-w-7xl px-4 py-16 sm:py-20 sm:px-6 lg:px-8">
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          whileInView={{ opacity: 1, y: 0 }}
+          viewport={{ once: true, margin: "-50px" }}
+          transition={{ duration: 0.5 }}
+          className="rounded-2xl border border-border-subtle bg-bg-card p-8 sm:p-12 text-center"
+        >
           <h2 className="font-mono text-2xl font-bold sm:text-3xl">Stay sharp.</h2>
           <p className="mt-4 text-text-secondary">
             Weekly AI security insights. No spam. Unsubscribe anytime.
@@ -105,7 +117,7 @@ export default function Home() {
           <div className="relative mt-8">
             <NewsletterForm />
           </div>
-        </div>
+        </motion.div>
       </section>
     </>
   );

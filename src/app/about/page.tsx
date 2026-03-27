@@ -42,10 +42,12 @@ export default function AboutPage() {
         transition={{ duration: 0.5, delay: 0.15 }}
         className="mt-16"
       >
-        <h2 className="font-mono text-2xl font-bold">Who&apos;s behind Nest Cipher</h2>
+        <h2 className="font-mono text-2xl font-bold">Who&apos;s behind this</h2>
         <p className="mt-4 text-text-secondary leading-relaxed">
-          Built by a team passionate about the intersection of AI and cybersecurity.
-          We ship tools that we ourselves use daily — and we&apos;re just getting started.
+          I&apos;m Gancho — a web developer and cybersecurity enthusiast based in Surrey, UK.
+          I built Nest Cipher because I wanted free, well-designed security tools that don&apos;t
+          gate useful functionality behind sign-ups or paywalls. Every tool here is something
+          I&apos;d actually use myself.
         </p>
       </motion.section>
 
