@@ -330,12 +330,11 @@ export function HeadersScanner() {
       )}
 
       {/* Results */}
-      <AnimatePresence>
-        {result && !loading && (
+      {result && !loading && (
           <motion.div
+            key={result.scannedAt}
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
-            exit={{ opacity: 0 }}
             transition={{ duration: 0.4 }}
             className="mt-12"
           >
@@ -393,6 +392,7 @@ export function HeadersScanner() {
             {/* Actions */}
             <div className="mt-8 flex flex-col sm:flex-row gap-3">
               <button
+                type="button"
                 onClick={handleReset}
                 className="rounded-lg border border-border-hover px-6 py-3 text-sm font-medium text-text-primary
                   hover:border-accent hover:text-accent transition-colors"
@@ -400,6 +400,7 @@ export function HeadersScanner() {
                 Scan Another
               </button>
               <button
+                type="button"
                 onClick={handleCopyResults}
                 className="rounded-lg border border-border-hover px-6 py-3 text-sm font-medium text-text-primary
                   hover:border-accent hover:text-accent transition-colors"
@@ -409,7 +410,6 @@ export function HeadersScanner() {
             </div>
           </motion.div>
         )}
-      </AnimatePresence>
     </div>
   );
 }
