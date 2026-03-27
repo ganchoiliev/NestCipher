@@ -12,7 +12,8 @@ const tools = [
     icon: <ShieldIcon />,
     title: "AI Email Analyzer",
     description: "Paste a suspicious email. Get an AI-powered threat breakdown in seconds.",
-    status: "coming-soon" as const,
+    status: "live" as const,
+    href: "/tools/email-analyzer",
   },
   {
     icon: <ScanIcon />,
