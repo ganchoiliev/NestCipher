@@ -26,7 +26,8 @@ const tools = [
     icon: <BookIcon />,
     title: "OWASP LLM Top 10",
     description: "Interactive explorer of the most critical AI security vulnerabilities.",
-    status: "coming-soon" as const,
+    status: "live" as const,
+    href: "/tools/owasp-llm-top-10",
   },
 ];
 
