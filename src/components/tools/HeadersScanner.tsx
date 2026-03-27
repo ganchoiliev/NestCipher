@@ -227,6 +227,7 @@ export function HeadersScanner() {
     setResult(null);
     setError(null);
     setUrl("");
+    window.scrollTo({ top: 0, behavior: "smooth" });
     setTimeout(() => inputRef.current?.focus(), 50);
   };
 
