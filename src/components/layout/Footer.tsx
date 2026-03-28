@@ -47,13 +47,13 @@ export function Footer() {
               </a>
             </span>
             <div className="flex items-center gap-3 text-text-muted">
-              <a href="#" className="hover:text-accent transition-colors" aria-label="GitHub">
+              <a href="https://github.com/ganchoiliev/" target="_blank" rel="noopener noreferrer" className="hover:text-accent transition-colors" aria-label="GitHub">
                 <GithubIcon />
               </a>
-              <a href="#" className="hover:text-accent transition-colors" aria-label="X / Twitter">
+              <a href="https://x.com/gancho_iliev" target="_blank" rel="noopener noreferrer" className="hover:text-accent transition-colors" aria-label="X / Twitter">
                 <TwitterIcon />
               </a>
-              <a href="#" className="hover:text-accent transition-colors" aria-label="LinkedIn">
+              <a href="https://www.linkedin.com/in/gancho-iliev-6b146817b" target="_blank" rel="noopener noreferrer" className="hover:text-accent transition-colors" aria-label="LinkedIn">
                 <LinkedInIcon />
               </a>
             </div>
