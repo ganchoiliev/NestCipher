@@ -4,7 +4,7 @@ import { useState } from "react";
 import { motion } from "framer-motion";
 import Link from "next/link";
 import { ToolCard } from "@/components/ui/ToolCard";
-import { ShieldIcon, ScanIcon, BookIcon } from "@/components/ui/icons";
+import { ShieldIcon, ScanIcon, BookIcon, TargetIcon } from "@/components/ui/icons";
 
 const categories = ["All", "Scanners", "AI Tools", "Learning"] as const;
 
@@ -29,6 +29,13 @@ const tools = [
     description: "Interactive explorer of the most critical AI security vulnerabilities.",
     status: "live" as const,
     href: "/tools/owasp-llm-top-10",
+  },
+  {
+    icon: <TargetIcon />,
+    title: "Prompt Injection Tester",
+    description: "Test your AI system prompt against 12 known injection attacks and get hardening recommendations.",
+    status: "live" as const,
+    href: "/tools/prompt-injection-tester",
   },
 ];
 
