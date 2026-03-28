@@ -41,6 +41,48 @@ export function EmailAnalyzerSkeleton() {
   );
 }
 
+// ── AI Content Detector skeleton layout ──
+
+export function AIContentDetectorSkeleton() {
+  return (
+    <motion.div
+      initial={{ opacity: 0 }}
+      animate={{ opacity: 1 }}
+      transition={{ duration: 0.2 }}
+      className="mt-12 flex flex-col items-center gap-6"
+    >
+      {/* Score circle placeholder */}
+      <SkeletonShimmer className="w-44 h-44 rounded-full" />
+
+      {/* Verdict badge placeholder */}
+      <SkeletonShimmer className="w-20 h-6 rounded-full" />
+
+      {/* Confidence bar placeholder */}
+      <SkeletonShimmer className="w-48 h-3 rounded" />
+
+      {/* Sentence analysis block placeholder */}
+      <div className="w-full mt-4">
+        <SkeletonShimmer className="w-40 h-5 rounded mb-4" />
+        <SkeletonShimmer className="w-full h-40 rounded-xl" />
+      </div>
+
+      {/* Signal cards placeholder */}
+      <div className="w-full space-y-4 mt-4">
+        {[1, 2, 3, 4, 5].map((i) => (
+          <SkeletonShimmer key={i} className="h-40 rounded-xl w-full" />
+        ))}
+      </div>
+
+      {/* Stats grid placeholder */}
+      <div className="w-full grid gap-4 grid-cols-2 sm:grid-cols-3 mt-4">
+        {[1, 2, 3, 4, 5, 6].map((i) => (
+          <SkeletonShimmer key={i} className="h-20 rounded-xl w-full" />
+        ))}
+      </div>
+    </motion.div>
+  );
+}
+
 // ── Headers Scanner skeleton layout ──
 
 export function HeadersScannerSkeleton() {

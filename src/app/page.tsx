@@ -5,7 +5,7 @@ import Link from "next/link";
 import { HeroCanvas } from "@/components/ui/HeroCanvas";
 import { ToolCard } from "@/components/ui/ToolCard";
 import { NewsletterForm } from "@/components/ui/NewsletterForm";
-import { ShieldIcon, ScanIcon, BookIcon } from "@/components/ui/icons";
+import { ShieldIcon, ScanIcon, BookIcon, DetectorIcon } from "@/components/ui/icons";
 
 const tools = [
   {
@@ -28,6 +28,13 @@ const tools = [
     description: "Interactive explorer of the most critical AI security vulnerabilities.",
     status: "live" as const,
     href: "/tools/owasp-llm-top-10",
+  },
+  {
+    icon: <DetectorIcon />,
+    title: "AI Content Detector",
+    description: "Detect AI-generated text with sentence-level highlighting and 5 detection signals.",
+    status: "live" as const,
+    href: "/tools/ai-content-detector",
   },
 ];
 
