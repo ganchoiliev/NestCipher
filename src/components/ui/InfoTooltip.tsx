@@ -77,7 +77,8 @@ export function InfoTooltip({ text, isOpen, onToggle }: InfoTooltipProps) {
             animate={{ opacity: 1, scale: 1 }}
             exit={{ opacity: 0, scale: 0.95 }}
             transition={{ duration: 0.15 }}
-            className={`absolute top-full mt-1.5 z-50 max-w-[280px] rounded-lg border border-border-subtle bg-bg-elevated p-3 text-sm text-text-secondary shadow-lg ${
+            style={{ backgroundColor: "#1A1A25", border: "1px solid rgba(255,255,255,0.1)", boxShadow: "0 10px 25px rgba(0,0,0,0.5)" }}
+            className={`absolute top-full mt-1.5 z-50 max-w-[280px] rounded-lg px-3 py-2 text-sm text-text-secondary ${
               alignRight ? "right-0" : "left-0"
             }`}
           >
