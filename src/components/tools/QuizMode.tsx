@@ -2,7 +2,7 @@
 
 import { useState, useEffect, useCallback } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import type { OwaspVulnerability } from "@/types/owasp";
+import type { OwaspVulnerability, Difficulty } from "@/types/owasp";
 import { QuizResults } from "./QuizResults";
 
 interface QuizModeProps {
@@ -24,7 +24,7 @@ export function QuizMode({ vulnerabilities, onBackToExplorer }: QuizModeProps) {
   const [currentIndex, setCurrentIndex] = useState(0);
   const [selectedOption, setSelectedOption] = useState<number | null>(null);
   const [answered, setAnswered] = useState(false);
-  const [results, setResults] = useState<{ questionTitle: string; correct: boolean }[]>([]);
+  const [results, setResults] = useState<{ questionTitle: string; correct: boolean; difficulty: Difficulty }[]>([]);
   const [showResults, setShowResults] = useState(false);
 
   const initQuiz = useCallback(() => {
@@ -70,6 +70,7 @@ export function QuizMode({ vulnerabilities, onBackToExplorer }: QuizModeProps) {
       {
         questionTitle: `${current.id}: ${current.title}`,
         correct: selectedOption === quiz.correctIndex,
+        difficulty: current.difficulty,
       },
     ]);
 
@@ -175,6 +176,15 @@ export function QuizMode({ vulnerabilities, onBackToExplorer }: QuizModeProps) {
                 className="mt-4 border-l-2 border-accent/40 bg-bg-elevated rounded-r-lg pl-4 pr-4 py-3"
               >
                 <p className="text-sm text-text-secondary leading-relaxed">{quiz.explanation}</p>
+                <span className={`inline-block mt-2 rounded-full px-2.5 py-0.5 text-xs font-medium capitalize ${
+                  current.difficulty === "introductory"
+                    ? "bg-green-500/10 text-green-400"
+                    : current.difficulty === "intermediate"
+                    ? "bg-amber-500/10 text-amber-400"
+                    : "bg-blue-500/10 text-blue-400"
+                }`}>
+                  {current.difficulty} question
+                </span>
               </motion.div>
             )}
           </AnimatePresence>

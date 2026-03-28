@@ -19,6 +19,17 @@ export function OwaspExplorer() {
   const [mode, setMode] = useState<"explore" | "quiz">("explore");
   const [expandedId, setExpandedId] = useState<string | null>(null);
   const [riskFilter, setRiskFilter] = useState<RiskLevel | "all">("all");
+  const [hasExpandedAny, setHasExpandedAny] = useState(false);
+  const [exploredIds, setExploredIds] = useState<Set<string>>(new Set());
+
+  const handleToggle = (id: string) => {
+    const isExpanding = expandedId !== id;
+    setExpandedId(isExpanding ? id : null);
+    if (isExpanding) {
+      setHasExpandedAny(true);
+      setExploredIds((prev) => new Set(prev).add(id));
+    }
+  };
 
   const filtered =
     riskFilter === "all"
@@ -108,6 +119,20 @@ export function OwaspExplorer() {
               </span>
             </div>
 
+            {/* Progress tracker */}
+            <div className="mb-6">
+              <p className="text-sm text-text-secondary mb-2">
+                You&apos;ve explored {exploredIds.size} of {owaspLlmTop10.length} vulnerabilities
+              </p>
+              <div className="h-1.5 rounded-full bg-bg-elevated overflow-hidden">
+                <motion.div
+                  className="h-full rounded-full bg-accent"
+                  animate={{ width: `${(exploredIds.size / owaspLlmTop10.length) * 100}%` }}
+                  transition={{ duration: 0.3 }}
+                />
+              </div>
+            </div>
+
             {/* Cards */}
             <div className="space-y-3">
               {filtered.map((v, i) => (
@@ -115,8 +140,9 @@ export function OwaspExplorer() {
                   key={v.id}
                   vulnerability={v}
                   isExpanded={expandedId === v.id}
-                  onToggle={() => setExpandedId(expandedId === v.id ? null : v.id)}
+                  onToggle={() => handleToggle(v.id)}
                   index={i}
+                  showStartHere={!hasExpandedAny}
                 />
               ))}
             </div>

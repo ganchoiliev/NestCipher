@@ -1,4 +1,5 @@
 export type RiskLevel = "critical" | "high" | "medium";
+export type Difficulty = "introductory" | "intermediate" | "advanced";
 
 export interface QuizQuestion {
   question: string;
@@ -18,5 +19,6 @@ export interface OwaspVulnerability {
   impact: string[];
   mitigations: string[];
   tags: string[];
+  difficulty: Difficulty;
   quiz: QuizQuestion;
 }

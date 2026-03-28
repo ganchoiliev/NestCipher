@@ -2,10 +2,12 @@
 
 import { motion } from "framer-motion";
 
+import type { Difficulty } from "@/types/owasp";
+
 interface QuizResultsProps {
   score: number;
   total: number;
-  answers: { questionTitle: string; correct: boolean }[];
+  answers: { questionTitle: string; correct: boolean; difficulty: Difficulty }[];
   onRetry: () => void;
   onBackToExplorer: () => void;
 }
@@ -64,6 +66,22 @@ export function QuizResults({ score, total, answers, onRetry, onBackToExplorer }
       </div>
 
       <p className="mt-4 text-text-secondary text-center">{scoreMessage(score, total)}</p>
+
+      {/* Difficulty breakdown */}
+      <div className="mt-6 w-full max-w-md space-y-1.5">
+        {(["introductory", "intermediate", "advanced"] as const).map((d) => {
+          const group = answers.filter((a) => a.difficulty === d);
+          const correct = group.filter((a) => a.correct).length;
+          return (
+            <div key={d} className="flex items-center justify-between text-sm">
+              <span className="text-text-secondary capitalize">{d}</span>
+              <span className={correct === group.length ? "text-[#00D4AA]" : "text-[#EF4444]"}>
+                {correct}/{group.length} correct
+              </span>
+            </div>
+          );
+        })}
+      </div>
 
       {/* Answer summary */}
       <div className="mt-8 w-full max-w-md space-y-2">

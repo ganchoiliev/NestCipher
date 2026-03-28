@@ -26,6 +26,7 @@ export const owaspLlmTop10: OwaspVulnerability[] = [
       "Regularly red-team your LLM application with prompt injection attacks to identify weaknesses",
     ],
     tags: ["injection", "jailbreak", "system prompt", "indirect injection"],
+    difficulty: "introductory",
     quiz: {
       question:
         "What makes indirect prompt injection particularly dangerous compared to direct prompt injection?",
@@ -65,6 +66,7 @@ export const owaspLlmTop10: OwaspVulnerability[] = [
       "Use differential privacy techniques during training to limit memorization of individual data points",
     ],
     tags: ["data leakage", "PII", "training data", "privacy", "system prompt"],
+    difficulty: "introductory",
     quiz: {
       question:
         "Why is embedding API keys in an LLM's system prompt a security risk?",
@@ -104,6 +106,7 @@ export const owaspLlmTop10: OwaspVulnerability[] = [
       "Implement model evaluation pipelines that test for backdoors and anomalous behaviour before deployment",
     ],
     tags: ["supply chain", "model hub", "poisoning", "dependencies", "plugins"],
+    difficulty: "advanced",
     quiz: {
       question:
         "Which of the following is a supply chain risk specific to LLM applications that doesn't exist in traditional software?",
@@ -143,6 +146,7 @@ export const owaspLlmTop10: OwaspVulnerability[] = [
       "Continuously monitor model outputs post-deployment for drift or anomalous response patterns",
     ],
     tags: ["poisoning", "training data", "backdoor", "bias", "fine-tuning"],
+    difficulty: "intermediate",
     quiz: {
       question:
         "Why is data poisoning especially difficult to detect after a model has been trained?",
@@ -182,6 +186,7 @@ export const owaspLlmTop10: OwaspVulnerability[] = [
       "Apply Content Security Policy headers to limit the impact of any XSS that slips through",
     ],
     tags: ["XSS", "injection", "output validation", "SSRF", "code execution"],
+    difficulty: "intermediate",
     quiz: {
       question:
         "An LLM generates a product description that is rendered directly on a web page. What type of vulnerability could this create?",
@@ -221,6 +226,7 @@ export const owaspLlmTop10: OwaspVulnerability[] = [
       "Use read-only access by default and only grant write permissions for explicitly approved operations",
     ],
     tags: ["permissions", "autonomy", "least privilege", "agent", "tools"],
+    difficulty: "intermediate",
     quiz: {
       question:
         "An AI scheduling assistant has access to Gmail, Drive, Calendar, and Admin Console. What principle does this violate?",
@@ -260,6 +266,7 @@ export const owaspLlmTop10: OwaspVulnerability[] = [
       "Regularly test your application with prompt extraction attacks to verify your defences",
     ],
     tags: ["system prompt", "extraction", "meta-prompt", "information disclosure"],
+    difficulty: "introductory",
     quiz: {
       question:
         "Why should you never rely on keeping the system prompt secret as a security measure?",
@@ -299,6 +306,7 @@ export const owaspLlmTop10: OwaspVulnerability[] = [
       "Monitor and audit the documents in your RAG pipeline regularly for unauthorized additions or modifications",
     ],
     tags: ["RAG", "vector database", "embeddings", "retrieval", "knowledge base"],
+    difficulty: "advanced",
     quiz: {
       question:
         "In a RAG system, how can an attacker perform indirect prompt injection?",
@@ -338,6 +346,7 @@ export const owaspLlmTop10: OwaspVulnerability[] = [
       "Train users to treat LLM outputs as drafts that require human review, especially in high-stakes contexts",
     ],
     tags: ["hallucination", "misinformation", "factuality", "overtrust", "verification"],
+    difficulty: "introductory",
     quiz: {
       question:
         "What makes LLM hallucinations particularly dangerous compared to errors in traditional software?",
@@ -377,6 +386,7 @@ export const owaspLlmTop10: OwaspVulnerability[] = [
       "Monitor for anomalous usage patterns (high volume, unusually long outputs) and implement automatic throttling",
     ],
     tags: ["DoS", "cost", "rate limiting", "tokens", "resource exhaustion"],
+    difficulty: "intermediate",
     quiz: {
       question:
         "How can an autonomous LLM agent make unbounded consumption attacks worse?",

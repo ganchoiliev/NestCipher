@@ -1,118 +1,120 @@
-# NEST CIPHER — Polish Pass: Security Headers Scanner
+# NEST CIPHER — Polish Pass: OWASP LLM Top 10 Explorer
 
 ## Overview
 
-Add loading states, skeleton animations, and micro-explainer
-tooltips to the Security Headers Scanner at /tools/headers-scanner.
-The goal is to make the tool feel responsive during the scan and
-more approachable for non-technical users.
+Add approachability improvements to the OWASP LLM Top 10 Explorer
+at /tools/owasp-llm-top-10. The explorer already works well —
+this pass makes it more welcoming to non-technical users and
+adds visual polish to the quiz.
 
-## 1. Loading State — Scan in Progress
+## 1. Difficulty Indicator on Each Card
 
-When the user clicks "Scan" and the API is processing:
+In the collapsed card view, add a small "Complexity" indicator
+below the summary text:
 
-### Skeleton loader
+- "Easy to understand" (for LLM01 Prompt Injection, LLM02
+  Sensitive Info, LLM07 System Prompt Leakage, LLM09 Misinformation)
+- "Moderate" (for LLM05 Improper Output Handling, LLM06 Excessive
+  Agency, LLM10 Unbounded Consumption)
+- "Technical" (for LLM03 Supply Chain, LLM04 Data Poisoning,
+  LLM08 Vector Embeddings)
 
-- Below the input, show a skeleton shimmer animation where
-  the results will appear:
-  - A pulsing circle placeholder (where the grade circle will be)
-  - Below it: 3-4 rectangular skeleton bars (where header cards
-    will appear)
-  - Use a subtle shimmer effect — a gradient that slides
-    left-to-right across the skeleton elements
-  - Skeleton colours: bg-[#1A1A25] (surface) with a lighter
-    shimmer sweep of rgba(255,255,255,0.03)
-  - The skeleton should appear with a fade-in (200ms)
+Display as a small muted text label with a dot indicator:
 
-### Scan button state
+- Easy: green dot + "Beginner friendly"
+- Moderate: amber dot + "Some technical knowledge helpful"
+- Technical: blue dot + "Requires development background"
 
-- Text changes to "Scanning..."
-- Add a subtle pulse animation on the button (opacity 0.7 to 1,
-  looping, 1.5s)
-- Button is disabled (no pointer events, reduced opacity)
-- Textarea/input is disabled during scan
+This helps non-technical visitors know which cards to start with.
 
-### Progress indicator (optional but nice)
+## 2. "Start Here" Highlight
 
-- Small text below the input during scan:
-  "Fetching headers from [domain]..." in muted colour
-- This gives the user confidence something is happening
+Add a subtle "Start here" badge on the first Critical card
+(Prompt Injection — LLM01) for first-time visitors. This gives
+new users a clear entry point instead of facing 10 cards and
+not knowing where to begin.
 
-## 2. Micro-Explainer Tooltips
+- Small cyan outline badge: "Start here →"
+- Positioned next to the expand chevron
+- Only show on initial page load — once any card has been
+  expanded, hide it (use local component state, not localStorage)
 
-Add a small info icon (ⓘ) next to each header name in the
-results breakdown. When clicked or hovered, it shows a
-one-sentence plain-English explanation of what that header does.
+## 3. Quiz Mode — Difficulty Feedback
 
-These should be SHORT — one sentence max. Not the technical
-description that's already shown, but a "talk to me like
-I'm not a developer" version:
+After each quiz answer is submitted, in addition to the
+existing explanation, add a small "Difficulty" tag on
+the question:
 
-- Strict-Transport-Security: "Forces your browser to always
-  use a secure HTTPS connection."
-- Content-Security-Policy: "Controls what scripts and resources
-  a website is allowed to load."
-- X-Content-Type-Options: "Stops browsers from guessing file
-  types, which can be exploited."
-- X-Frame-Options: "Prevents other websites from embedding
-  this site in a hidden frame."
-- Referrer-Policy: "Controls how much information your browser
-  shares when you click a link."
-- Permissions-Policy: "Limits which device features
-  (camera, mic, location) a site can access."
-- X-XSS-Protection: "Legacy protection against script injection
-  — modern sites use CSP instead."
-- Cross-Origin-Opener-Policy: "Isolates this site's window from
-  other sites for extra security."
-- Cross-Origin-Resource-Policy: "Controls whether other websites
-  can load this site's files."
-- Cross-Origin-Embedder-Policy: "Ensures all loaded resources
-  have explicitly granted permission."
+- If <30% of concepts in the question require technical
+  knowledge: "Introductory question"
+- If 30-60%: "Intermediate question"
+- If >60%: "Advanced question"
 
-### Tooltip implementation
+This is pre-tagged in the data — add a `difficulty` field
+to each quiz entry in the data file:
 
-- Use a simple click-toggle (not hover — hover doesn't work
-  on mobile)
-- Small popover that appears below/beside the info icon
-- Dark surface bg with subtle border, rounded corners
-- Close on click outside or clicking the icon again
-- Framer Motion fade + scale animation (150ms)
-- Max width: 280px so it doesn't overflow on mobile
+- LLM01 (Prompt Injection): "introductory"
+- LLM02 (Sensitive Info): "introductory"
+- LLM03 (Supply Chain): "advanced"
+- LLM04 (Data Poisoning): "intermediate"
+- LLM05 (Output Handling): "intermediate"
+- LLM06 (Excessive Agency): "intermediate"
+- LLM07 (System Prompt): "introductory"
+- LLM08 (Embeddings): "advanced"
+- LLM09 (Misinformation): "introductory"
+- LLM10 (Unbounded Consumption): "intermediate"
 
-## 3. Grade Explanation
+Display as a small pill next to the vulnerability ID
+in quiz mode after the answer is revealed.
 
-Below the grade circle, after the score (e.g. "90 / 100"),
-add a one-line contextual explanation based on the grade:
+## 4. Quiz Results — Breakdown by Difficulty
 
-- A+: "Excellent. This site implements all recommended
-  security headers."
-- A: "Strong security posture with minor improvements possible."
-- B: "Good foundation, but several important headers are missing."
-- C: "Moderate risk. Multiple security headers need attention."
-- D: "Weak security. Most recommended headers are not configured."
-- F: "Critical gaps. This site is missing essential
-  security protections."
+On the quiz results screen, below the score circle,
+add a mini breakdown:
 
-This text should appear below the score in secondary/muted colour.
+- "Introductory: 3/4 correct"
+- "Intermediate: 2/3 correct"  
+- "Advanced: 1/2 correct"
 
-## 4. Result Summary Card
+This helps users understand WHERE their knowledge gaps are,
+not just the total score. Use the same green/red colour
+coding as the answer list.
 
-At the top of the results (between the grade circle and
-the header cards), add a compact summary bar:
+## 5. Reading Time Estimate
 
-- A horizontal row showing:
-  "X passed · Y failed · Z partial"
-  with green/red/amber dots respectively
-- Compact, single line, muted text
-- This gives an instant overview before diving into individual cards
+In each expanded card, at the top of the expanded content
+(before the description), add:
+
+- "~2 min read" (estimate based on content length —
+  roughly 200 words per minute)
+- Small muted text, positioned right-aligned
+- This sets expectations and encourages users to
+  actually read the full card
+
+Calculate this from the combined length of description +
+realWorldExample + impact + mitigations text.
+
+## 6. Progress Tracker (Optional Enhancement)
+
+At the top of the Explorer mode (below the filter pills),
+add a subtle progress indicator:
+
+- "You've explored X of 10 vulnerabilities"
+- Track which cards have been expanded during this session
+  (component state only — no persistence)
+- Small progress bar below the text (same style as quiz
+  progress bar)
+- This gamifies the exploration and encourages users to
+  read all 10
 
 ## Constraints
 
-- Don't break any existing functionality
-- All animations must respect prefers-reduced-motion
-- Skeleton loader should be a reusable component
-  (we'll use it for the email analyzer polish too)
-- Keep the info icon small (14-16px) and unobtrusive —
-  it should not compete with the header name visually
-- Test on mobile — tooltips must not overflow the viewport
+- Don't break existing accordion, filter, or quiz functionality
+- All new elements should be subtle — they enhance,
+  not clutter
+- All text must be accurate and educational
+- Respect prefers-reduced-motion for any new animations
+- Mobile: all new elements must work at 390px width
 - Run `npm run build` — zero errors
+- Keep the data file changes minimal — only add the
+  `difficulty` field to each vulnerability entry
