@@ -4,6 +4,22 @@ import { useState, useRef, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import Link from "next/link";
 import type { EmailAnalysisResponse, ThreatLevel, SuspiciousElement } from "@/types/email-analyzer";
+import { EmailAnalyzerSkeleton } from "@/components/ui/SkeletonLoader";
+
+const LOADING_PHASES = [
+  "Scanning email content...",
+  "Analyzing threat indicators...",
+  "Generating security report...",
+  "Almost done...",
+];
+
+const SCORE_RANGES = [
+  { range: "0–15", label: "Safe", description: "No significant phishing indicators found.", min: 0, max: 15 },
+  { range: "16–35", label: "Low", description: "Minor suspicious elements, likely legitimate.", min: 16, max: 35 },
+  { range: "36–60", label: "Medium", description: "Some phishing indicators present. Exercise caution.", min: 36, max: 60 },
+  { range: "61–85", label: "High", description: "Strong phishing indicators. Do not interact with this email.", min: 61, max: 85 },
+  { range: "86–100", label: "Critical", description: "This is almost certainly a phishing attempt or scam.", min: 86, max: 100 },
+];
 
 // ── Colors ──
 
@@ -130,6 +146,24 @@ const elementTypeBorders: Record<SuspiciousElement["type"], string> = {
   other: "border-[#3B82F6]/40",
 };
 
+function ElementTypeIcon({ type }: { type: SuspiciousElement["type"] }) {
+  const props = { className: "w-4 h-4 shrink-0", viewBox: "0 0 24 24", fill: "none", stroke: "currentColor", strokeWidth: "2", strokeLinecap: "round" as const, strokeLinejoin: "round" as const };
+  switch (type) {
+    case "link":
+      return <svg {...props}><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71" /><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71" /></svg>;
+    case "sender":
+      return <svg {...props}><circle cx="12" cy="12" r="4" /><path d="M16 8v5a3 3 0 0 0 6 0v-1a10 10 0 1 0-4 8" /></svg>;
+    case "attachment":
+      return <svg {...props}><path d="M21.44 11.05l-9.19 9.19a6 6 0 0 1-8.49-8.49l9.19-9.19a4 4 0 0 1 5.66 5.66l-9.2 9.19a2 2 0 0 1-2.83-2.83l8.49-8.48" /></svg>;
+    case "language":
+      return <svg {...props}><path d="M4 7h6M7 4v6M10 21l4-9 4 9M12.5 17h5" /></svg>;
+    case "impersonation":
+      return <svg {...props}><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z" /></svg>;
+    case "other":
+      return <svg {...props}><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z" /><line x1="12" y1="9" x2="12" y2="13" /><line x1="12" y1="17" x2="12.01" y2="17" /></svg>;
+  }
+}
+
 // ── Main Component ──
 
 export function EmailAnalyzer() {
@@ -138,6 +172,8 @@ export function EmailAnalyzer() {
   const [error, setError] = useState<string | null>(null);
   const [result, setResult] = useState<EmailAnalysisResponse | null>(null);
   const [copied, setCopied] = useState(false);
+  const [scoreExplainerOpen, setScoreExplainerOpen] = useState(false);
+  const [loadingPhase, setLoadingPhase] = useState(0);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
 
   const handleAnalyze = async (e: React.FormEvent) => {
@@ -204,6 +240,17 @@ export function EmailAnalyzer() {
     }
   }, [copied]);
 
+  useEffect(() => {
+    if (!loading) {
+      setLoadingPhase(0);
+      return;
+    }
+    const interval = setInterval(() => {
+      setLoadingPhase((prev) => Math.min(prev + 1, LOADING_PHASES.length - 1));
+    }, 2000);
+    return () => clearInterval(interval);
+  }, [loading]);
+
   return (
     <div className="mx-auto max-w-4xl px-4 py-12 sm:px-6 lg:px-8">
       {/* Breadcrumb */}
@@ -251,9 +298,32 @@ export function EmailAnalyzer() {
           className="w-full sm:w-auto rounded-lg bg-accent px-8 py-3 text-sm font-medium text-bg-primary
             hover:bg-accent-hover transition-colors disabled:opacity-50"
         >
-          {loading ? <span className="animate-pulse">Analyzing...</span> : "Analyze Email"}
+          {loading ? (
+            <motion.span
+              animate={{ opacity: [0.7, 1, 0.7] }}
+              transition={{ duration: 1.5, repeat: Infinity, ease: "easeInOut" }}
+            >
+              Analyzing...
+            </motion.span>
+          ) : "Analyze Email"}
         </button>
       </form>
+
+      {/* Loading phase text */}
+      <AnimatePresence mode="wait">
+        {loading && (
+          <motion.p
+            key={loadingPhase}
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            transition={{ duration: 0.3 }}
+            className="mt-3 text-sm text-accent"
+          >
+            {LOADING_PHASES[loadingPhase]}
+          </motion.p>
+        )}
+      </AnimatePresence>
 
       {/* Error */}
       <AnimatePresence>
@@ -270,14 +340,31 @@ export function EmailAnalyzer() {
       </AnimatePresence>
 
       {/* Loading skeleton */}
-      {loading && (
-        <div className="mt-12 flex flex-col items-center gap-6 animate-pulse">
-          <div className="w-44 h-44 rounded-full bg-bg-elevated" />
-          <div className="w-48 h-4 rounded bg-bg-elevated" />
-          <div className="w-full grid gap-4 sm:grid-cols-2 mt-4">
-            {[1, 2, 3, 4, 5, 6].map((i) => (
-              <div key={i} className="h-36 rounded-xl bg-bg-elevated" />
-            ))}
+      {loading && <EmailAnalyzerSkeleton />}
+
+      {/* Empty state */}
+      {!loading && !result && !error && (
+        <div className="mt-12 flex flex-col items-center gap-4 opacity-40">
+          <p className="text-sm text-text-muted">Paste an email above to get started</p>
+          <div className="flex items-center gap-6">
+            <div className="flex items-center gap-1.5 text-xs text-text-muted">
+              <svg className="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z" />
+              </svg>
+              6 threat categories
+            </div>
+            <div className="flex items-center gap-1.5 text-xs text-text-muted">
+              <svg className="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                <path d="M9.937 15.5A2 2 0 0 0 8.5 14.063l-6.135-1.582a.5.5 0 0 1 0-.962L8.5 9.936A2 2 0 0 0 9.937 8.5l1.582-6.135a.5.5 0 0 1 .963 0L14.063 8.5A2 2 0 0 0 15.5 9.937l6.135 1.582a.5.5 0 0 1 0 .963L15.5 14.063a2 2 0 0 0-1.437 1.437l-1.582 6.135a.5.5 0 0 1-.963 0z" />
+              </svg>
+              AI-powered analysis
+            </div>
+            <div className="flex items-center gap-1.5 text-xs text-text-muted">
+              <svg className="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                <path d="M13 2L3 14h9l-1 8 10-12h-9l1-8z" />
+              </svg>
+              Instant results
+            </div>
           </div>
         </div>
       )}
@@ -294,8 +381,66 @@ export function EmailAnalyzer() {
           {/* Threat Score */}
           <div className="flex flex-col items-center text-center">
             <ThreatScoreCircle score={result.overallScore} level={result.overallLevel} />
-            <p className="mt-4 text-lg font-medium text-text-primary">{result.verdict}</p>
-            <p className="mt-2 text-sm text-text-secondary max-w-xl">{result.summary}</p>
+            <div
+              className="mt-4 max-w-xl mx-auto border-l-2 pl-4 text-left"
+              style={{ borderColor: threatColor(result.overallLevel) }}
+            >
+              <p className="text-lg font-medium text-text-primary">{result.verdict}</p>
+              <p className="mt-1 text-sm text-text-secondary">{result.summary}</p>
+            </div>
+
+            {/* Score explainer */}
+            <div className="mt-4 w-full max-w-xl">
+              <button
+                type="button"
+                onClick={() => setScoreExplainerOpen((prev) => !prev)}
+                className="flex items-center gap-1.5 text-xs text-text-muted hover:text-text-secondary transition-colors mx-auto"
+              >
+                What does this score mean?
+                <motion.svg
+                  animate={{ rotate: scoreExplainerOpen ? 180 : 0 }}
+                  transition={{ duration: 0.2 }}
+                  className="w-3.5 h-3.5"
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  stroke="currentColor"
+                  strokeWidth="2"
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                >
+                  <polyline points="6 9 12 15 18 9" />
+                </motion.svg>
+              </button>
+              <AnimatePresence>
+                {scoreExplainerOpen && (
+                  <motion.div
+                    initial={{ height: 0, opacity: 0 }}
+                    animate={{ height: "auto", opacity: 1 }}
+                    exit={{ height: 0, opacity: 0 }}
+                    transition={{ duration: 0.2, ease: "easeInOut" }}
+                    className="overflow-hidden"
+                  >
+                    <div className="mt-3 bg-bg-elevated rounded-lg p-4 space-y-2">
+                      {SCORE_RANGES.map((r) => {
+                        const isActive = result.overallScore >= r.min && result.overallScore <= r.max;
+                        return (
+                          <div
+                            key={r.range}
+                            className={`flex items-baseline justify-between gap-4 text-sm rounded px-2 py-1 ${
+                              isActive ? "bg-accent/10 text-text-primary" : "text-text-muted"
+                            }`}
+                          >
+                            <span className="font-mono text-xs shrink-0">{r.range}</span>
+                            <span className="font-medium shrink-0">{r.label}</span>
+                            <span className="text-xs text-right">{r.description}</span>
+                          </div>
+                        );
+                      })}
+                    </div>
+                  </motion.div>
+                )}
+              </AnimatePresence>
+            </div>
           </div>
 
           {/* Category Breakdown */}
@@ -324,7 +469,8 @@ export function EmailAnalyzer() {
                     className={`rounded-xl border-l-2 ${elementTypeBorders[el.type]} bg-bg-card p-4`}
                   >
                     <div className="flex items-center gap-2 mb-1">
-                      <span className="rounded-full bg-bg-elevated px-2 py-0.5 text-xs font-medium text-text-muted">
+                      <span className="inline-flex items-center gap-1.5 rounded-full bg-bg-elevated px-2 py-0.5 text-xs font-medium text-text-muted">
+                        <ElementTypeIcon type={el.type} />
                         {elementTypeLabels[el.type]}
                       </span>
                     </div>

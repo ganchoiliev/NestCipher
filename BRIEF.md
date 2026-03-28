@@ -1,120 +1,126 @@
-# NEST CIPHER — Polish Pass: OWASP LLM Top 10 Explorer
+# NEST CIPHER — Polish Pass: AI Email Analyzer
 
 ## Overview
 
-Add approachability improvements to the OWASP LLM Top 10 Explorer
-at /tools/owasp-llm-top-10. The explorer already works well —
-this pass makes it more welcoming to non-technical users and
-adds visual polish to the quiz.
+Add loading states, skeleton animation, and approachability
+improvements to the AI Email Analyzer at /tools/email-analyzer.
+This tool has the longest wait time (3-8 seconds for OpenAI response)
+so the loading state is the most impactful improvement.
 
-## 1. Difficulty Indicator on Each Card
+## 1. Loading State — Analysis in Progress
 
-In the collapsed card view, add a small "Complexity" indicator
-below the summary text:
+When the user clicks "Analyze Email" and the API is processing:
 
-- "Easy to understand" (for LLM01 Prompt Injection, LLM02
-  Sensitive Info, LLM07 System Prompt Leakage, LLM09 Misinformation)
-- "Moderate" (for LLM05 Improper Output Handling, LLM06 Excessive
-  Agency, LLM10 Unbounded Consumption)
-- "Technical" (for LLM03 Supply Chain, LLM04 Data Poisoning,
-  LLM08 Vector Embeddings)
+### Skeleton loader
 
-Display as a small muted text label with a dot indicator:
+- Below the textarea, show a rich skeleton animation where
+  results will appear:
+  - A pulsing circle placeholder (where the score circle will be)
+  - Below it: a horizontal row of 6 small rectangular skeleton
+    bars in 2x3 grid (where category cards will appear)
+  - Below that: 3 narrow skeleton bars (where red flags will appear)
+  - Use the same shimmer effect as the headers scanner skeleton
+  - Fade-in on mount (200ms)
 
-- Easy: green dot + "Beginner friendly"
-- Moderate: amber dot + "Some technical knowledge helpful"
-- Technical: blue dot + "Requires development background"
+### Progress feedback
 
-This helps non-technical visitors know which cards to start with.
+- Below the textarea during analysis, show animated text:
+  - Phase 1 (0-2s): "Scanning email content..."
+  - Phase 2 (2-4s): "Analyzing threat indicators..."
+  - Phase 3 (4-6s): "Generating security report..."
+  - Phase 4 (6s+): "Almost done..."
+  - Each phase fades in/out with a subtle transition
+  - Use a useEffect with setInterval to cycle through phases
+  - Cyan text colour, small font
 
-## 2. "Start Here" Highlight
+### Button state
 
-Add a subtle "Start here" badge on the first Critical card
-(Prompt Injection — LLM01) for first-time visitors. This gives
-new users a clear entry point instead of facing 10 cards and
-not knowing where to begin.
+- Text changes to "Analyzing..." with pulse animation
+- Button disabled, textarea disabled
+- Both visually dimmed (opacity 0.5)
 
-- Small cyan outline badge: "Start here →"
-- Positioned next to the expand chevron
-- Only show on initial page load — once any card has been
-  expanded, hide it (use local component state, not localStorage)
+## 2. Category Card Score Bars — Animated Fill
 
-## 3. Quiz Mode — Difficulty Feedback
+The category cards already show horizontal score bars.
+Add an animation so the bar width fills from 0 to the
+final score over 0.8s with ease-out timing. This should
+trigger when the results first appear (not on every render).
 
-After each quiz answer is submitted, in addition to the
-existing explanation, add a small "Difficulty" tag on
-the question:
+Use Framer Motion's `initial={{ width: 0 }}` and
+`animate={{ width: score% }}` with a stagger delay
+matching the card entrance animation.
 
-- If <30% of concepts in the question require technical
-  knowledge: "Introductory question"
-- If 30-60%: "Intermediate question"
-- If >60%: "Advanced question"
+## 3. Verdict Emphasis
 
-This is pre-tagged in the data — add a `difficulty` field
-to each quiz entry in the data file:
+The verdict text below the score circle is important but
+currently blends in. Make it stand out more:
 
-- LLM01 (Prompt Injection): "introductory"
-- LLM02 (Sensitive Info): "introductory"
-- LLM03 (Supply Chain): "advanced"
-- LLM04 (Data Poisoning): "intermediate"
-- LLM05 (Output Handling): "intermediate"
-- LLM06 (Excessive Agency): "intermediate"
-- LLM07 (System Prompt): "introductory"
-- LLM08 (Embeddings): "advanced"
-- LLM09 (Misinformation): "introductory"
-- LLM10 (Unbounded Consumption): "intermediate"
+- Slightly larger font (text-lg)
+- Add a left border accent (2px, colour matches the
+  overall threat level — cyan for safe, green for low,
+  amber for medium, orange for high, red for critical)
+- Add subtle padding-left (pl-4)
+- This creates a "pull quote" effect that draws the eye
 
-Display as a small pill next to the vulnerability ID
-in quiz mode after the answer is revealed.
+## 4. "What does this score mean?" Explainer
 
-## 4. Quiz Results — Breakdown by Difficulty
+Below the score circle and verdict, add a collapsible
+explanation section:
 
-On the quiz results screen, below the score circle,
-add a mini breakdown:
+- Small clickable text: "What does this score mean?"
+  with a chevron
+- When expanded, show:
+  - "0-15: Safe — No significant phishing indicators found."
+  - "16-35: Low — Minor suspicious elements, likely legitimate."
+  - "36-60: Medium — Some phishing indicators present.
+    Exercise caution."
+  - "61-85: High — Strong phishing indicators. Do not interact
+    with this email."
+  - "86-100: Critical — This is almost certainly a phishing
+    attempt or scam."
+  - Highlight the row that matches the current score
+- Collapsed by default — keeps the UI clean but available
+  for users who want context
 
-- "Introductory: 3/4 correct"
-- "Intermediate: 2/3 correct"  
-- "Advanced: 1/2 correct"
+## 5. Suspicious Elements — Type Icons
 
-This helps users understand WHERE their knowledge gaps are,
-not just the total score. Use the same green/red colour
-coding as the answer list.
+The suspicious elements section shows type badges (link, sender,
+language, etc.). Add small inline SVG icons before each type:
 
-## 5. Reading Time Estimate
+- link: chain/link icon (two interlocked ovals)
+- sender: @ symbol icon
+- attachment: paperclip icon
+- language: text/Aa icon
+- impersonation: mask/shield icon
+- other: warning triangle icon
 
-In each expanded card, at the top of the expanded content
-(before the description), add:
+Keep icons simple — 16x16px, stroke-based, using
+currentColor so they match the text. Don't use emoji.
 
-- "~2 min read" (estimate based on content length —
-  roughly 200 words per minute)
-- Small muted text, positioned right-aligned
-- This sets expectations and encourages users to
-  actually read the full card
+## 6. Empty State Enhancement
 
-Calculate this from the combined length of description +
-realWorldExample + impact + mitigations text.
+When the tool first loads (no analysis yet), the area below
+the textarea is just empty space. Add a subtle empty state:
 
-## 6. Progress Tracker (Optional Enhancement)
-
-At the top of the Explorer mode (below the filter pills),
-add a subtle progress indicator:
-
-- "You've explored X of 10 vulnerabilities"
-- Track which cards have been expanded during this session
-  (component state only — no persistence)
-- Small progress bar below the text (same style as quiz
-  progress bar)
-- This gamifies the exploration and encourages users to
-  read all 10
+- Centered muted text: "Paste an email above to get started"
+- Below it: three small feature highlights in a row:
+  - "6 threat categories"
+  - "AI-powered analysis"
+  - "Instant results"
+- Each with a small icon (shield, brain, zap)
+- Very muted — opacity 0.4 — this is a hint, not a feature
+  showcase
+- Disappears when results or loading state appears
 
 ## Constraints
 
-- Don't break existing accordion, filter, or quiz functionality
-- All new elements should be subtle — they enhance,
-  not clutter
-- All text must be accurate and educational
-- Respect prefers-reduced-motion for any new animations
-- Mobile: all new elements must work at 390px width
+- Reuse the skeleton shimmer component from the scanner polish
+- Don't break existing functionality (especially the
+  "Analyze Another" reset)
+- All animations respect prefers-reduced-motion
+- The phased loading text must use component state with
+  cleanup (clear the interval on unmount or when results arrive)
+- Test the full flow: paste email → loading skeleton + phased
+  text → results render → Analyze Another → back to empty state
+- Mobile: all new elements must work at 390px
 - Run `npm run build` — zero errors
-- Keep the data file changes minimal — only add the
-  `difficulty` field to each vulnerability entry
