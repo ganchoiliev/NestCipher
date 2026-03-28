@@ -1,128 +1,118 @@
-# NEST CIPHER — Project Scaffold & Design Foundation
+# NEST CIPHER — Polish Pass: Security Headers Scanner
 
-## Context
+## Overview
 
-Building nestcipher.com — a free interactive AI & cybersecurity security toolkit.
-Premium dark-theme design, portfolio-grade quality.
-Will deploy to Vercel. Domain is on Hostinger (DNS pointed via CNAME later).
+Add loading states, skeleton animations, and micro-explainer
+tooltips to the Security Headers Scanner at /tools/headers-scanner.
+The goal is to make the tool feel responsive during the scan and
+more approachable for non-technical users.
 
-## Step 1: Scaffold
+## 1. Loading State — Scan in Progress
 
-Create a Next.js 15 project (App Router, TypeScript, src/ directory) with:
+When the user clicks "Scan" and the API is processing:
 
-- Tailwind CSS 4 (latest, using @import "tailwindcss" in globals.css)
-- Framer Motion for page transitions and UI micro-interactions
-- GSAP (gsap + @gsap/react) for scroll-driven hero animation
-- next-themes for dark/light mode toggle (dark as default)
-- @vercel/analytics (added but not configured yet)
-- geist font package (Geist Sans + Geist Mono)
+### Skeleton loader
 
-## Step 2: Design Tokens & Tailwind Config
+- Below the input, show a skeleton shimmer animation where
+  the results will appear:
+  - A pulsing circle placeholder (where the grade circle will be)
+  - Below it: 3-4 rectangular skeleton bars (where header cards
+    will appear)
+  - Use a subtle shimmer effect — a gradient that slides
+    left-to-right across the skeleton elements
+  - Skeleton colours: bg-[#1A1A25] (surface) with a lighter
+    shimmer sweep of rgba(255,255,255,0.03)
+  - The skeleton should appear with a fade-in (200ms)
 
-Dark-first theme with these tokens:
+### Scan button state
 
-- Background: #0A0A0F (primary), #12121A (card/surface), #1A1A25 (elevated)
-- Accent cyan: #00D4AA (primary action), #00B894 (hover), #00F5C8 (glow)  
-- Warning amber: #F59E0B
-- Danger red: #EF4444
-- Text: #F1F1F3 (primary), #9CA3AF (secondary), #6B7280 (muted)
-- Border: rgba(255,255,255,0.06) (subtle), rgba(255,255,255,0.12) (hover)
-- Mono font for code/data: Geist Mono
-- Sans font for UI: Geist Sans
+- Text changes to "Scanning..."
+- Add a subtle pulse animation on the button (opacity 0.7 to 1,
+  looping, 1.5s)
+- Button is disabled (no pointer events, reduced opacity)
+- Textarea/input is disabled during scan
 
-Configure Tailwind with these as CSS variables applied via globals.css,
-respecting the next-themes data-theme attribute. Include a light mode
-fallback but dark is the default and priority.
+### Progress indicator (optional but nice)
 
-## Step 3: Layout Shell
+- Small text below the input during scan:
+  "Fetching headers from [domain]..." in muted colour
+- This gives the user confidence something is happening
 
-Build these layout components in src/components/layout/:
+## 2. Micro-Explainer Tooltips
 
-### Navbar (fixed, glassmorphism on scroll)
+Add a small info icon (ⓘ) next to each header name in the
+results breakdown. When clicked or hovered, it shows a
+one-sentence plain-English explanation of what that header does.
 
-- Logo: "NEST" in Geist Mono bold + "CIPHER" in Geist Mono light weight
-  with a subtle CSS shimmer animation on hover (like encrypted text decoding)
-- Nav links: Home, Tools, About, Newsletter
-- Mobile hamburger menu with Framer Motion slide-in
-- On scroll: add backdrop-blur-xl + bg-opacity transition
-  (transparent at top, glassy on scroll). Use a useScrollPosition hook.
+These should be SHORT — one sentence max. Not the technical
+description that's already shown, but a "talk to me like
+I'm not a developer" version:
 
-### Footer
+- Strict-Transport-Security: "Forces your browser to always
+  use a secure HTTPS connection."
+- Content-Security-Policy: "Controls what scripts and resources
+  a website is allowed to load."
+- X-Content-Type-Options: "Stops browsers from guessing file
+  types, which can be exploited."
+- X-Frame-Options: "Prevents other websites from embedding
+  this site in a hidden frame."
+- Referrer-Policy: "Controls how much information your browser
+  shares when you click a link."
+- Permissions-Policy: "Limits which device features
+  (camera, mic, location) a site can access."
+- X-XSS-Protection: "Legacy protection against script injection
+  — modern sites use CSP instead."
+- Cross-Origin-Opener-Policy: "Isolates this site's window from
+  other sites for extra security."
+- Cross-Origin-Resource-Policy: "Controls whether other websites
+  can load this site's files."
+- Cross-Origin-Embedder-Policy: "Ensures all loaded resources
+  have explicitly granted permission."
 
-- Minimal: logo, copyright, "Built by [Agency]" link placeholder,
-  social icons (GitHub, X/Twitter, LinkedIn)
-- No heavy footer — this is a tool site, not a blog
+### Tooltip implementation
 
-### PageTransition wrapper
+- Use a simple click-toggle (not hover — hover doesn't work
+  on mobile)
+- Small popover that appears below/beside the info icon
+- Dark surface bg with subtle border, rounded corners
+- Close on click outside or clicking the icon again
+- Framer Motion fade + scale animation (150ms)
+- Max width: 280px so it doesn't overflow on mobile
 
-- Framer Motion AnimatePresence wrapping {children} in layout.tsx
-- Fade + subtle Y-translate on route change
+## 3. Grade Explanation
 
-## Step 4: Homepage (/app/page.tsx)
+Below the grade circle, after the score (e.g. "90 / 100"),
+add a one-line contextual explanation based on the grade:
 
-Build the landing page with these sections:
+- A+: "Excellent. This site implements all recommended
+  security headers."
+- A: "Strong security posture with minor improvements possible."
+- B: "Good foundation, but several important headers are missing."
+- C: "Moderate risk. Multiple security headers need attention."
+- D: "Weak security. Most recommended headers are not configured."
+- F: "Critical gaps. This site is missing essential
+  security protections."
 
-### Hero Section
+This text should appear below the score in secondary/muted colour.
 
-- Full viewport height, dark canvas
-- Large headline: "Free AI-Powered Security Tools"
-  with a typewriter or text-reveal animation (Framer Motion)
-- Subheadline: "Scan. Analyze. Protect. — Open tools for developers
-  and security professionals."
-- Two CTAs: "Explore Tools" (primary, cyan) + "Join Newsletter" (outline)
-- Background: animated particle/node mesh using GSAP.
-  Subtle dots connected by thin lines, gently floating,
-  with a radial glow around the cursor on mousemove.
-  This represents a network being scanned. Keep it performant —
-  use canvas or limit SVG nodes to <80. requestAnimationFrame loop.
+## 4. Result Summary Card
 
-### Tools Grid Section
+At the top of the results (between the grade circle and
+the header cards), add a compact summary bar:
 
-- Section heading: "Security Toolkit" with a subtle horizontal rule accent
-- 3 tool cards in a responsive grid (1 col mobile, 3 col desktop)
-- Each card: dark surface bg, subtle border, icon placeholder (use a
-  simple SVG icon — shield, scan, book), tool name, one-line description,
-  "Coming Soon" badge (amber) or "Launch" button (cyan)
-- Cards: hover-lift with Framer Motion (scale 1.02, border glow,
-  shadow bloom)
-- Card data for now:
-  1. "AI Email Analyzer" — "Paste a suspicious email. Get an AI-powered
-     threat breakdown in seconds." — Coming Soon
-  2. "Security Headers Scanner" — "Enter any URL. Get an instant
-     security grade with actionable fixes." — Coming Soon  
-  3. "OWASP LLM Top 10" — "Interactive explorer of the most critical
-     AI security vulnerabilities." — Coming Soon
-
-### Newsletter CTA Section
-
-- Simple centered section: "Stay sharp." headline
-- "Weekly AI security insights. No spam. Unsubscribe anytime."
-- Email input + subscribe button (no backend wiring yet —
-  just the UI with a placeholder toast on submit)
-
-## Step 5: Tools Index Page (/app/tools/page.tsx)
-
-- Same tool grid as homepage but full-page, with more room
-- Add breadcrumb: Home > Tools
-- Filter/category tabs placeholder (All, Scanners, AI Tools, Learning)
-  — not functional yet, just the UI
-
-## Step 6: About Page (/app/about/page.tsx)  
-
-- Brief mission statement section
-- "Who's behind Nest Cipher" — placeholder for personal/agency intro
-- Tech stack badges (Next.js, Vercel, OpenAI, etc.) as pill components
+- A horizontal row showing:
+  "X passed · Y failed · Z partial"
+  with green/red/amber dots respectively
+- Compact, single line, muted text
+- This gives an instant overview before diving into individual cards
 
 ## Constraints
 
-- NO placeholder "lorem ipsum" — use real copy as specified above
-- NO generic component libraries (no shadcn, no MUI) — hand-built components
-- Responsive: mobile-first, breakpoints at sm/md/lg/xl
+- Don't break any existing functionality
 - All animations must respect prefers-reduced-motion
-- Performance: no layout shift, lazy load below-fold sections
-- Keep all components modular and typed with proper TypeScript interfaces
-- Use server components by default, "use client" only where needed
-  (interactivity, animations, hooks)
-
-After scaffolding, run `npm run build` to verify zero errors,
-then run `npm run dev` and confirm the site loads on localhost.
+- Skeleton loader should be a reusable component
+  (we'll use it for the email analyzer polish too)
+- Keep the info icon small (14-16px) and unobtrusive —
+  it should not compete with the header name visually
+- Test on mobile — tooltips must not overflow the viewport
+- Run `npm run build` — zero errors

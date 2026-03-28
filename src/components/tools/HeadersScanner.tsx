@@ -4,6 +4,32 @@ import { useState, useRef, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import Link from "next/link";
 import type { ScanResponse, HeaderResult, GradeLevel } from "@/types/headers-scanner";
+import { HeadersScannerSkeleton } from "@/components/ui/SkeletonLoader";
+import { InfoTooltip } from "@/components/ui/InfoTooltip";
+
+// ── Data maps ──
+
+const HEADER_EXPLAINERS: Record<string, string> = {
+  "Strict-Transport-Security": "Forces your browser to always use a secure HTTPS connection.",
+  "Content-Security-Policy": "Controls what scripts and resources a website is allowed to load.",
+  "X-Content-Type-Options": "Stops browsers from guessing file types, which can be exploited.",
+  "X-Frame-Options": "Prevents other websites from embedding this site in a hidden frame.",
+  "Referrer-Policy": "Controls how much information your browser shares when you click a link.",
+  "Permissions-Policy": "Limits which device features (camera, mic, location) a site can access.",
+  "X-XSS-Protection": "Legacy protection against script injection — modern sites use CSP instead.",
+  "Cross-Origin-Opener-Policy": "Isolates this site's window from other sites for extra security.",
+  "Cross-Origin-Resource-Policy": "Controls whether other websites can load this site's files.",
+  "Cross-Origin-Embedder-Policy": "Ensures all loaded resources have explicitly granted permission.",
+};
+
+const GRADE_EXPLANATIONS: Record<GradeLevel, string> = {
+  "A+": "Excellent. This site implements all recommended security headers.",
+  "A": "Strong security posture with minor improvements possible.",
+  "B": "Good foundation, but several important headers are missing.",
+  "C": "Moderate risk. Multiple security headers need attention.",
+  "D": "Weak security. Most recommended headers are not configured.",
+  "F": "Critical gaps. This site is missing essential security protections.",
+};
 
 // ── Grade colors ──
 
@@ -71,7 +97,42 @@ function GradeCircle({ grade, score, maxScore }: { grade: GradeLevel; score: num
       <p className="font-mono text-lg text-text-secondary">
         {score} / {maxScore}
       </p>
+      <p className="mt-2 text-sm text-text-muted text-center max-w-xs">
+        {GRADE_EXPLANATIONS[grade]}
+      </p>
     </div>
+  );
+}
+
+// ── Result Summary ──
+
+function ResultSummary({ headers }: { headers: HeaderResult[] }) {
+  const passed = headers.filter((h) => h.status === "pass").length;
+  const failed = headers.filter((h) => h.status === "fail").length;
+  const partial = headers.filter((h) => h.status === "partial").length;
+
+  return (
+    <motion.div
+      initial={{ opacity: 0, y: 10 }}
+      animate={{ opacity: 1, y: 0 }}
+      transition={{ duration: 0.3, delay: 0.2 }}
+      className="flex items-center justify-center gap-4 text-sm text-text-muted font-mono flex-wrap"
+    >
+      <span className="flex items-center gap-1.5">
+        <span className="w-2 h-2 rounded-full bg-[#00D4AA]" />
+        {passed} passed
+      </span>
+      <span className="text-border-hover">·</span>
+      <span className="flex items-center gap-1.5">
+        <span className="w-2 h-2 rounded-full bg-[#EF4444]" />
+        {failed} failed
+      </span>
+      <span className="text-border-hover">·</span>
+      <span className="flex items-center gap-1.5">
+        <span className="w-2 h-2 rounded-full bg-[#F59E0B]" />
+        {partial} partial
+      </span>
+    </motion.div>
   );
 }
 
@@ -119,7 +180,9 @@ function StatusIcon({ status }: { status: HeaderResult["status"] }) {
 
 function HeaderCard({ header, index }: { header: HeaderResult; index: number }) {
   const [expanded, setExpanded] = useState(false);
+  const [tooltipOpen, setTooltipOpen] = useState(false);
   const isLongValue = header.value && header.value.length > 80;
+  const explainer = HEADER_EXPLAINERS[header.name];
 
   const scorePillColor =
     header.status === "pass"
@@ -144,9 +207,18 @@ function HeaderCard({ header, index }: { header: HeaderResult; index: number }) 
         </div>
         <div className="flex-1 min-w-0">
           <div className="flex items-center justify-between gap-3 flex-wrap">
-            <h3 className="font-mono text-sm font-semibold text-text-primary">
-              {header.name}
-            </h3>
+            <div className="flex items-center gap-1.5">
+              <h3 className="font-mono text-sm font-semibold text-text-primary">
+                {header.name}
+              </h3>
+              {explainer && (
+                <InfoTooltip
+                  text={explainer}
+                  isOpen={tooltipOpen}
+                  onToggle={() => setTooltipOpen((prev) => !prev)}
+                />
+              )}
+            </div>
             <span className={`rounded-full px-2.5 py-0.5 text-xs font-medium ${scorePillColor}`}>
               {header.score}/{header.maxScore}
             </span>
@@ -295,12 +367,31 @@ export function HeadersScanner() {
             hover:bg-accent-hover transition-colors disabled:opacity-50 whitespace-nowrap"
         >
           {loading ? (
-            <span className="animate-pulse">Scanning...</span>
+            <motion.span
+              animate={{ opacity: [0.7, 1, 0.7] }}
+              transition={{ duration: 1.5, repeat: Infinity, ease: "easeInOut" }}
+            >
+              Scanning...
+            </motion.span>
           ) : (
             "Scan"
           )}
         </button>
       </form>
+
+      {/* Progress text */}
+      <AnimatePresence>
+        {loading && (
+          <motion.p
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            className="mt-3 text-sm text-text-muted"
+          >
+            Fetching headers from {url.trim().replace(/^https?:\/\//, "")}...
+          </motion.p>
+        )}
+      </AnimatePresence>
 
       {/* Error */}
       <AnimatePresence>
@@ -317,17 +408,7 @@ export function HeadersScanner() {
       </AnimatePresence>
 
       {/* Loading skeleton */}
-      {loading && (
-        <div className="mt-12 flex flex-col items-center gap-6 animate-pulse">
-          <div className="w-44 h-44 rounded-full bg-bg-elevated" />
-          <div className="w-32 h-4 rounded bg-bg-elevated" />
-          <div className="w-full space-y-4 mt-8">
-            {[1, 2, 3].map((i) => (
-              <div key={i} className="h-24 rounded-xl bg-bg-elevated" />
-            ))}
-          </div>
-        </div>
-      )}
+      {loading && <HeadersScannerSkeleton />}
 
       {/* Results */}
       {result && !loading && (
@@ -351,6 +432,11 @@ export function HeadersScanner() {
               <p className="mt-1 text-xs text-text-muted">
                 Scanned at {new Date(result.scannedAt).toLocaleString()}
               </p>
+            </div>
+
+            {/* Result Summary */}
+            <div className="mt-6">
+              <ResultSummary headers={result.headers} />
             </div>
 
             {/* Header Analysis */}
