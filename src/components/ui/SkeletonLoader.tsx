@@ -83,6 +83,42 @@ export function AIContentDetectorSkeleton() {
   );
 }
 
+// ── AI Bias Checker skeleton layout ──
+
+export function AIBiasCheckerSkeleton() {
+  return (
+    <motion.div
+      initial={{ opacity: 0 }}
+      animate={{ opacity: 1 }}
+      transition={{ duration: 0.2 }}
+      className="mt-12 flex flex-col items-center gap-6"
+    >
+      {/* Score circle placeholder */}
+      <SkeletonShimmer className="w-44 h-44 rounded-full" />
+
+      {/* Level badge placeholder */}
+      <SkeletonShimmer className="w-20 h-6 rounded-full" />
+
+      {/* Category cards placeholder */}
+      <div className="w-full space-y-4 mt-4">
+        {[1, 2, 3, 4, 5].map((i) => (
+          <SkeletonShimmer key={i} className="h-40 rounded-xl w-full" />
+        ))}
+      </div>
+
+      {/* Bias instance cards placeholder */}
+      <div className="w-full space-y-3 mt-4">
+        {[1, 2, 3].map((i) => (
+          <SkeletonShimmer key={i} className="h-32 rounded-xl w-full" />
+        ))}
+      </div>
+
+      {/* Suggestions placeholder */}
+      <SkeletonShimmer className="w-full h-24 rounded-xl mt-4" />
+    </motion.div>
+  );
+}
+
 // ── Headers Scanner skeleton layout ──
 
 export function HeadersScannerSkeleton() {

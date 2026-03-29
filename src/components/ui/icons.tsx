@@ -39,6 +39,17 @@ export function DetectorIcon({ className = "w-6 h-6" }: { className?: string }) 
   );
 }
 
+export function BalanceIcon({ className = "w-6 h-6" }: { className?: string }) {
+  return (
+    <svg className={className} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
+      <path d="M12 3v18" />
+      <path d="M6 7l-4 8h8L6 7z" />
+      <path d="M18 7l-4 8h8l-4-8z" />
+      <path d="M6 3h12" />
+    </svg>
+  );
+}
+
 export function BookIcon({ className = "w-6 h-6" }: { className?: string }) {
   return (
     <svg className={className} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">

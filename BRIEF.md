@@ -1,241 +1,226 @@
-Here's the most detailed prompt I've written for any tool on the site. This one earns its place as the flagship.
-
-# NEST CIPHER — Tool Build: AI Content Detector
+# NEST CIPHER — Tool Build: AI Bias Checker
 
 ## Overview
 
-Build a comprehensive AI content detector at /tools/ai-content-detector.
-Users paste text, the tool analyzes it across multiple detection signals
-and returns a detailed breakdown showing not just WHETHER the text is
-AI-generated, but WHY — with sentence-level analysis and visual
-highlighting.
+Build an AI bias checker at /tools/ai-bias-checker. Users paste
+an AI-generated response or prompt output, the tool analyzes it
+for demographic bias, stereotyping, representation gaps, assumption
+patterns, and framing bias — then provides a bias score with
+specific findings and suggestions for more balanced output.
 
-This is the tool that gets shared. Every teacher, editor, recruiter,
-and content manager needs this. The competition (GPTZero, Originality.ai)
-is paywalled after a few checks. We're giving it away free with a
-better UI than any of them.
-
-## What Makes This Different
-
-Most AI detectors give you a single percentage and call it done.
-Ours breaks the analysis into 5 detection signals, highlights
-individual sentences by AI probability, and educates the user on
-what patterns indicate AI-generated text. It's a detection tool
-AND a learning tool.
+This is the most educational tool in the toolkit. Nobody has
+built a free, accessible version of this. It teaches people
+to think critically about AI outputs — which is the core mission
+of the entire site.
 
 ## Route Structure
 
-### Page: /app/tools/ai-content-detector/page.tsx
+### Page: /app/tools/ai-bias-checker/page.tsx
 
 - Server component with metadata
-- Title: "AI Content Detector — Detect AI-Generated Text"
-- Description: "Paste any text and detect whether it was written
-  by AI. Free, detailed analysis with sentence-level highlighting
-  and 5 detection signals."
+- Title: "AI Bias Checker — Detect Bias in AI Outputs"
+- Description: "Analyze AI-generated text for demographic bias,
+  stereotyping, and representation gaps. Free, detailed analysis
+  with actionable suggestions."
 
-### Client Component: /components/tools/AIContentDetector.tsx
+### Client Component: /components/tools/AIBiasChecker.tsx
 
 - "use client" — handles all interactivity
 
-### API Route: /app/api/detect-ai-content/route.ts
+### API Route: /app/api/check-bias/route.ts
 
 - POST endpoint
-- Receives { content: string }
-- Returns structured multi-signal analysis
+- Receives { content: string, context?: string }
+- Returns structured bias analysis
 
-### Types: /types/ai-content-detector.ts
+### Types: /types/ai-bias-checker.ts
 
-## TypeScript Types (/types/ai-content-detector.ts)
+## TypeScript Types (/types/ai-bias-checker.ts)
 
 ```typescript
-export type ContentVerdict = 'human' | 'likely_human' | 'mixed' | 'likely_ai' | 'ai';
+export type BiasLevel = 'minimal' | 'low' | 'moderate' | 'significant' | 'high';
 
-export interface SentenceAnalysis {
-  text: string;
-  aiProbability: number;     // 0-100
-  verdict: ContentVerdict;
-  signals: string[];         // Why this sentence was flagged
+export type BiasCategory = 
+  | 'demographic'
+  | 'stereotyping'
+  | 'representation'
+  | 'assumption'
+  | 'framing';
+
+export interface BiasInstance {
+  id: string;
+  category: BiasCategory;
+  excerpt: string;           // The specific text that exhibits bias
+  issue: string;             // What the bias is
+  impact: string;            // Why it matters
+  suggestion: string;        // How to fix it
+  severity: 'low' | 'medium' | 'high';
 }
 
-export interface DetectionSignal {
-  name: string;              // e.g. "Perplexity Analysis"
-  score: number;             // 0-100 (100 = very likely AI)
-  verdict: ContentVerdict;
-  description: string;       // What this signal measures
-  findings: string[];        // 2-4 specific observations
-  explanation: string;       // Plain-English explanation
+export interface BiasCategoryAnalysis {
+  category: BiasCategory;
+  name: string;              // Display name
+  score: number;             // 0-100 (0 = no bias, 100 = severe bias)
+  level: BiasLevel;
+  description: string;       // What this category measures
+  findings: string[];        // 2-4 observations
+  explanation: string;       // Why this matters
 }
 
-export interface ContentStats {
-  wordCount: number;
-  sentenceCount: number;
-  avgWordsPerSentence: number;
-  vocabularyRichness: number;    // Unique words / total words
-  avgSentenceLength: number;
-  longestSentence: number;
-  shortestSentence: number;
-}
-
-export interface AIContentAnalysis {
-  overallScore: number;          // 0-100 (0 = human, 100 = AI)
-  overallVerdict: ContentVerdict;
+export interface BiasAnalysis {
+  overallScore: number;          // 0-100 (0 = unbiased, 100 = heavily biased)
+  overallLevel: BiasLevel;
   verdictText: string;           // One-line summary
-  confidence: number;            // 0-100 confidence in the verdict
-  signals: DetectionSignal[];    // 5 detection signals
-  sentenceAnalysis: SentenceAnalysis[];  // Per-sentence breakdown
-  stats: ContentStats;
-  summary: string;               // 2-3 sentence analysis summary
-  educationalNote: string;       // Teaching the user what to look for
+  categories: BiasCategoryAnalysis[];  // 5 bias categories
+  instances: BiasInstance[];     // Specific bias instances found
+  positiveAspects: string[];    // Things the text does well
+  rewriteSuggestions: string[]; // 3-5 concrete rewrite suggestions
+  summary: string;              // 2-3 sentence summary
+  educationalNote: string;      // Teaching the user about AI bias
   analyzedAt: string;
 }
 ```
 
-## API Route (/app/api/detect-ai-content/route.ts)
+## API Route (/app/api/check-bias/route.ts)
 
 ### Input validation
 
-- POST with JSON body: { content: string }
-- Content must be between 50 and 10000 characters
-  (need at least a few sentences for meaningful analysis)
-- Return 400 for too short: "Please paste at least 50 characters
-  (a few sentences) for accurate detection."
-- Return 400 for too long: "Please limit text to 10,000 characters."
+- POST with JSON body: { content: string, context?: string }
+- Content: 50-10000 characters
+- Context (optional): additional info like "This was generated
+  for a job listing" or "This is a product description for
+  skincare" — helps the AI give more targeted analysis
+- Return 400 for validation failures
 
 ### Rate limiting
 
-- 5 requests per IP per hour (same rate limiter utility)
+- 5 requests per IP per hour (same utility)
 
 ### OpenAI System Prompt
 
-You are an expert AI content detection analyst. Your task is to
-analyze text and determine whether it was written by a human or
-generated by an AI language model (ChatGPT, Claude, Gemini, etc).
-Analyze the provided text across these 5 detection signals,
-scoring each 0-100 (0 = definitely human, 100 = definitely AI):
+You are an expert in AI ethics, fairness, and bias detection.
+Your task is to analyze AI-generated text for various forms of
+bias and provide constructive, educational feedback.
+Analyze the provided text across these 5 bias categories,
+scoring each 0-100 (0 = no bias detected, 100 = severe bias):
 
-Perplexity & Predictability: How predictable is the word
-choice? AI text tends to use the most statistically likely
-next word, creating low-perplexity text. Human writing is
-more surprising and varied. Look for: overly smooth flow,
-lack of unexpected word choices, predictable sentence
-transitions.
-Burstiness & Rhythm: Human writing varies sentence length
-dramatically — short punchy sentences mixed with long complex
-ones. AI tends to produce more uniform sentence lengths and
-paragraph structures. Look for: consistent sentence length,
-uniform paragraph structure, lack of rhythm variation.
-Vocabulary & Phrasing: AI models favor certain phrases
-and vocabulary patterns. Look for: overuse of words like
-"delve", "crucial", "furthermore", "landscape", "leverage",
-"streamline", "robust", "comprehensive", "facilitate",
-"in today's [X]", "it's important to note", "in conclusion".
-Also check for unnaturally formal or consistently neutral tone.
-Structural Patterns: AI text often follows predictable
-structures — introduction, enumerated points, balanced
-paragraphs, tidy conclusions. Human writing is messier,
-more organic, with tangents and asymmetric structure.
-Look for: formulaic organization, balanced paragraph lengths,
-predictable topic sentences, neat summarization.
-Authenticity Markers: Human writing contains personal
-voice markers — colloquialisms, contractions, emotional
-inconsistency, self-correction, specificity of experience,
-cultural references, humor, opinions stated as opinions
-rather than facts. AI text tends to be more neutral,
-hedging, and generically authoritative. Look for: absence
-of personal voice, excessive hedging, generic examples,
-lack of specificity.
+Demographic Bias: Does the text favor, exclude, or make
+assumptions about specific demographic groups based on gender,
+age, race, ethnicity, nationality, religion, disability, or
+socioeconomic status? Look for: gendered language defaults
+("he" for doctor, "she" for nurse), age-based assumptions,
+cultural centrism, ability assumptions.
+Stereotyping: Does the text reinforce stereotypes about
+any group? Look for: associating traits with groups
+("women are nurturing", "millennials are lazy"), cultural
+stereotypes, professional stereotypes, behavioral
+generalizations about demographics.
+Representation Gaps: Does the text consistently represent
+one perspective while ignoring others? Look for: Western-centric
+viewpoints, male-default language, heteronormative assumptions,
+able-bodied defaults, English-speaking world focus, urban bias.
+Assumption Patterns: Does the text make unstated assumptions
+about the reader or subject? Look for: assumed income level,
+assumed education level, assumed family structure, assumed
+cultural background, assumed technology access, assumed
+physical ability.
+Framing Bias: How does the text frame issues? Look for:
+presenting one perspective as default/normal, using loaded
+language, euphemisms that minimize impact on certain groups,
+false balance, disproportionate emphasis, passive voice to
+obscure responsibility.
 
-For each signal provide:
+For each category provide:
 
-A score from 0 (definitely human) to 100 (definitely AI)
-A verdict: "human" (0-20), "likely_human" (21-40),
-"mixed" (41-60), "likely_ai" (61-80), "ai" (81-100)
-A description of what this signal measures (1 sentence)
+Score from 0 (no bias) to 100 (severe bias)
+Level: "minimal" (0-15), "low" (16-35), "moderate" (36-60),
+"significant" (61-80), "high" (81-100)
+Description of what this category measures (1 sentence)
 2-4 specific findings from the text
-An explanation of why this matters (1-2 sentences)
+Explanation of why this matters (1-2 sentences)
 
-Also analyze EACH SENTENCE individually:
+Also identify specific bias INSTANCES in the text:
 
-For every sentence in the text, provide:
+For each biased statement or phrase, provide:
 
-The exact sentence text
-AI probability (0-100)
-Verdict (human/likely_human/mixed/likely_ai/ai)
-1-2 brief signal notes (e.g. "predictable phrasing",
-"natural voice", "AI vocabulary marker: 'delve'")
+The exact excerpt from the text
+Which bias category it falls under
+What the issue is (1 sentence)
+Why it matters / its impact (1 sentence)
+A concrete suggestion for improvement (rewrite the excerpt)
+Severity: low (subtle/unconscious), medium (noticeable),
+high (overt/harmful)
 
-Calculate an overall AI probability score (0-100) as an
-equally weighted average of the 5 signals.
-Also calculate a confidence score (0-100) reflecting how
-confident you are in the overall verdict. Short texts,
-technical writing, and formal business communication should
-have LOWER confidence since these naturally resemble AI output.
-Provide an educational note (2-3 sentences) teaching the user
-what specific patterns in THIS text suggest human or AI origin.
-This should be genuinely educational, not just restating the score.
-Calculate these text statistics:
+Also provide:
 
-Word count
-Sentence count
-Average words per sentence
-Vocabulary richness (unique words / total words, as percentage)
+2-3 positive aspects: things the text does WELL in terms
+of fairness and inclusion (even biased text usually has
+some positive elements)
+3-5 concrete rewrite suggestions: specific ways to make
+the text more balanced and inclusive
+An educational note (2-3 sentences) teaching the user
+about the specific type of bias found in this text
+
+Calculate overall bias score as weighted average:
+
+Demographic Bias: 25%
+Stereotyping: 25%
+Representation Gaps: 20%
+Assumption Patterns: 15%
+Framing Bias: 15%
+
+Important guidelines:
+
+Be constructive, not accusatory. The goal is education,
+not shaming.
+Acknowledge that some bias is unconscious and systemic —
+it doesn't mean the author is biased.
+Don't flag accurate demographic data as bias (e.g. if a
+medical text discusses conditions that disproportionately
+affect certain groups, that's not bias — that's accuracy).
+Context matters: a text about women's health targeting
+women is not "excluding men" — use common sense.
+If the text is genuinely well-balanced and unbiased, say so
+clearly with low scores and positive feedback. Don't
+manufacture findings.
+Short texts naturally have less data to analyze — adjust
+confidence accordingly.
 
 Respond ONLY with valid JSON matching this structure
 (no markdown, no backticks):
 {
 "overallScore": <number 0-100>,
-"overallVerdict": "<human|likely_human|mixed|likely_ai|ai>",
+"overallLevel": "<minimal|low|moderate|significant|high>",
 "verdictText": "<one sentence summary>",
-"confidence": <number 0-100>,
-"signals": [
+"categories": [
 {
-"name": "<signal name>",
+"category": "<demographic|stereotyping|representation|assumption|framing>",
+"name": "<display name>",
 "score": <number 0-100>,
-"verdict": "<verdict>",
-"description": "<what this signal measures>",
+"level": "<level>",
+"description": "<what this measures>",
 "findings": ["<finding 1>", "<finding 2>"],
 "explanation": "<why this matters>"
 }
 ],
-"sentenceAnalysis": [
+"instances": [
 {
-"text": "<exact sentence>",
-"aiProbability": <number 0-100>,
-"verdict": "<verdict>",
-"signals": ["<signal note 1>", "<signal note 2>"]
+"id": "<unique id>",
+"category": "<category>",
+"excerpt": "<exact text from input>",
+"issue": "<what the bias is>",
+"impact": "<why it matters>",
+"suggestion": "<concrete rewrite>",
+"severity": "<low|medium|high>"
 }
 ],
-"stats": {
-"wordCount": <number>,
-"sentenceCount": <number>,
-"avgWordsPerSentence": <number>,
-"vocabularyRichness": <number>,
-"avgSentenceLength": <number>,
-"longestSentence": <number>,
-"shortestSentence": <number>
-},
-"summary": "<2-3 sentence analysis summary>",
-"educationalNote": "<2-3 sentences teaching what patterns
-indicate human vs AI in this specific text>"
+"positiveAspects": ["<positive 1>", "<positive 2>"],
+"rewriteSuggestions": ["<suggestion 1>", "<suggestion 2>"],
+"summary": "<2-3 sentence summary>",
+"educationalNote": "<2-3 sentences about AI bias in this context>"
 }
-Important guidelines:
-
-Be calibrated. Not all formal text is AI. Not all casual
-text is human.
-Academic papers, legal documents, and technical writing
-naturally score higher on some AI signals — adjust confidence
-accordingly.
-Short texts (under 100 words) should have lower confidence.
-Focus on PATTERNS across the text, not individual words.
-The sentence-level analysis should be honest — most texts
-have a mix of AI-like and human-like sentences.
-
-### Response handling
-
-- Parse OpenAI JSON response
-- Add analyzedAt timestamp
-- Add computed stats if not returned (wordCount, sentenceCount)
-- Handle errors gracefully (502 for analysis failure)
+If the user provides additional context about the text's purpose,
+use it to calibrate your analysis.
 
 ## Client UI Implementation
 
@@ -245,204 +230,181 @@ Full-width, max-w-4xl centered container.
 
 **Top section:**
 
-- Breadcrumb: Home / Tools / AI Content Detector
-- H1: "AI Content Detector" (mono font)
-- Subtitle: "Paste any text below. Our AI will analyze it
-  across 5 detection signals and highlight individual sentences
-  by AI probability."
+- Breadcrumb: Home / Tools / AI Bias Checker
+- H1: "AI Bias Checker" (mono font)
+- Subtitle: "Paste AI-generated text below — job listings,
+  product descriptions, marketing copy, chatbot responses —
+  and we'll analyze it for bias and suggest improvements."
 - Small note: "Your text is analyzed securely and never stored."
 
 ### Input section
 
-- Large textarea (same styling as other tools)
-  - Placeholder: "Paste the text you want to analyze — essays,
-    articles, emails, blog posts, or any written content..."
+- Large textarea (same styling)
+  - Placeholder: "Paste AI-generated text here — e.g. a job
+    description, product copy, chatbot response, article,
+    or any AI output you want to check for bias..."
   - Min height: 200px
   - Character count: "0 / 10,000"
-- "Detect AI Content" button (cyan)
+- Optional context input (smaller textarea or text input):
+  - Label: "Context (optional)"
+  - Placeholder: "What is this text for? e.g. 'Job listing
+    for a software engineer' or 'Product description for
+    skincare targeting all genders'"
+  - This helps the AI calibrate its analysis
+  - Max 500 characters
+  - Collapsible — show a "Add context" link that reveals
+    the field. Keeps the default UI clean.
+- "Check for Bias" button (cyan)
   - Loading: "Analyzing..." with pulse
-  - Disabled during analysis
 
 ### Loading State
 
-Same pattern as email analyzer:
-
 - Skeleton loader
 - Phased text:
-  - "Scanning text patterns..."
-  - "Analyzing vocabulary and structure..."
-  - "Evaluating sentence-level signals..."
-  - "Generating detection report..."
+  - "Scanning for demographic patterns..."
+  - "Checking for stereotyping and assumptions..."
+  - "Analyzing representation and framing..."
+  - "Generating improvement suggestions..."
 
-### Results Section — THE KEY DIFFERENTIATOR
+### Results Section
 
-#### 1. Overall Score (top, centered)
+#### 1. Overall Score (centered)
 
-- Score circle (same SVG pattern) with colour coding:
-  - Human (0-20): cyan (#00D4AA)
-  - Likely Human (21-40): green (#22C55E)
-  - Mixed (41-60): amber (#F59E0B)
-  - Likely AI (61-80): orange (#F97316)
-  - AI (81-100): red (#EF4444)
-- Verdict badge below circle
-- Verdict text (one-liner)
-- Confidence indicator: "Confidence: 82%" with a small
-  horizontal bar
-- Below: "What does this mean?" collapsible explainer
-  (same pattern as email analyzer)
+- Score circle with colour coding:
+  - Minimal (0-15): cyan (#00D4AA)
+  - Low (16-35): green (#22C55E)
+  - Moderate (36-60): amber (#F59E0B)
+  - Significant (61-80): orange (#F97316)
+  - High (81-100): red (#EF4444)
+- NOTE: For this tool, LOWER is better. The score circle should
+  feel POSITIVE for low scores (unlike the email analyzer
+  where high = bad). Make sure the colour coding and messaging
+  reinforce this — green/cyan for low bias is good.
+- Verdict badge + verdict text
+- "What does this score mean?" collapsible explainer
 
-#### 2. Sentence Highlighting (THE HERO FEATURE)
+#### 2. Bias Categories (5 cards)
 
-- Section heading: "Sentence Analysis"
-- The full pasted text is rendered with each sentence
-  colour-coded by AI probability:
-  - Human (0-20): no highlight (default text colour)
-  - Likely Human (21-40): subtle green left border or bg
-  - Mixed (41-60): subtle amber left border or bg
-  - Likely AI (61-80): subtle orange left border or bg
-  - AI (81-100): subtle red left border or bg
-- Implementation: render each sentence as a <span> with
-  background-colour at very low opacity (0.1-0.15) so it's
-  visible but doesn't hurt readability
-- When user HOVERS over a sentence (or taps on mobile),
-  show a tooltip/popover with:
-  - AI probability: "78% AI probability"
-  - Verdict: "Likely AI"
-  - Signals: "Predictable phrasing, AI vocabulary marker"
-- Below the text block: a colour legend explaining the
-  highlighting:
-  - Cyan/default = Human, Green = Likely Human, Amber = Mixed,
-    Orange = Likely AI, Red = AI
+- Section heading: "Bias Analysis"
+- 5 cards in a single column with:
+  - Category name (mono, bold) + level badge
+  - Score bar (colour-coded, animated)
+  - Score: "35/100"
+  - Findings as bullet list
+  - Explanation text
+  - Left border colour matches the level
 
-#### 3. Detection Signals (below sentence analysis)
+#### 3. Specific Bias Instances (THE KEY FEATURE)
 
-- Section heading: "Detection Signals"
-- 5 signal cards in a single column (not grid — these need
-  breathing room for the educational content):
-  - Signal name (mono, bold) + verdict badge
-  - Score bar (horizontal, colour-coded, animated from 0)
-  - Score number: "72/100"
-  - Findings as bullet list (cyan dots)
-  - Explanation text (secondary colour)
-  - Each card has subtle left border matching the verdict colour
-  - Cards stagger-animate on mount
+- Section heading: "Bias Instances Found" (or "No Bias
+  Instances Found" if empty)
+- Each instance as a card:
+  - Severity badge (low=green, medium=amber, high=red)
+  - Category badge
+  - "Excerpt" in a highlighted quote block (mono, with
+    quotation marks or indent)
+  - "Issue": what's wrong
+  - "Impact": why it matters
+  - "Suggested rewrite": the improved version in a
+    green-bordered block — showing the user exactly how
+    to fix it
+- This side-by-side of "problematic → improved" is the
+  most useful part of the tool
 
-#### 4. Text Statistics (compact section)
+#### 4. Positive Aspects
 
-- Section heading: "Text Statistics"
-- Compact grid (3 columns on desktop, 2 on mobile):
-  - Word count
-  - Sentence count
-  - Avg words/sentence
-  - Vocabulary richness (as percentage)
-  - Longest sentence (word count)
-  - Shortest sentence (word count)
-- Each stat as a small card with the number large (mono)
-  and the label small below it
-- These help users understand their text objectively
+- Section heading: "What This Text Does Well"
+- Green-bordered card with checkmark icons
+- This is important — the tool should not feel like it's
+  only criticizing. Acknowledging positives builds trust
+  and makes the critique more credible.
 
-#### 5. Educational Note
+#### 5. Rewrite Suggestions
 
-- Section heading: "What to Look For"
-- The educational note from the AI in a highlighted card
-  (cyan left border, slightly elevated bg)
-- This is the section that makes the tool educational,
-  not just diagnostic
+- Section heading: "How to Improve"
+- Numbered list (cyan numbers, same as other tools)
+- These should be specific to THIS text, not generic advice
 
-#### 6. Action Buttons
+#### 6. Educational Note
 
-- "Analyze Another" (outline) — clears everything
-- "Copy Report" (outline) — copies formatted plain text:
-Nest Cipher AI Content Detection Report
-Overall Score: 72/100 (Likely AI)
-Confidence: 78%
-Verdict: This text shows several patterns consistent
-with AI-generated content.
-Detection Signals:
+- Section heading: "Understanding AI Bias"
+- Cyan-bordered card with the educational content
+- Specific to the TYPE of bias found in this text
 
-Perplexity & Predictability: 68/100
-Burstiness & Rhythm: 75/100
-Vocabulary & Phrasing: 80/100
-Structural Patterns: 65/100
-Authenticity Markers: 72/100
+#### 7. Action Buttons
 
-Text Statistics:
-
-Words: 342 | Sentences: 18 | Avg length: 19 words
-Vocabulary richness: 62%
-
-Analyzed by nestcipher.com
+- "Check Another" (outline) — clears everything
+- "Copy Report" (outline) — formatted plain text
 
 ### Empty State
 
-- "Paste text above to analyze"
+- "Paste AI-generated text above to check for bias"
 - Three feature hints:
-  - "5 detection signals"
-  - "Sentence-level highlighting"
-  - "Educational analysis"
+  - "5 bias categories"
+  - "Specific instance detection"  
+  - "Rewrite suggestions"
 - Opacity 0.4
 
 ## Update /tools page and homepage
 
-- Add AI Content Detector tool card:
-  - Icon: magnifying glass with document or eye icon
-  - Title: "AI Content Detector"
-  - Description: "Detect AI-generated text with sentence-level
-    highlighting and 5 detection signals."
+- Add AI Bias Checker tool card:
+  - Icon: scales/balance icon or an eye with equals sign
+  - Title: "AI Bias Checker"
+  - Description: "Detect bias in AI outputs with specific
+    instances and rewrite suggestions."
   - "Launch" badge
-  - Link to /tools/ai-content-detector
-- Tools grid now shows 5 tools
-
-## Animations
-
-- Score circle: same animation as all tools
-- Sentence highlighting: each sentence fades in sequentially
-  (0.02s stagger — fast, creates a sweep effect)
-- Signal cards: staggered entrance (0.05s)
-- Score bars: width animation from 0 (0.8s ease-out)
-- Stats cards: staggered fade-up
-- Hover tooltip on sentences: fade + scale (150ms)
-- All respect prefers-reduced-motion
-
-## Responsive
-
-- Mobile: single column everything, sentence tooltips
-  trigger on tap not hover, stats grid 2 columns
-- Desktop: max-w-4xl, stats grid 3 columns
+  - Link to /tools/ai-bias-checker
+- Tools grid now shows 6 tools (2 rows of 3)
 
 ## Testing
 
 1. npm run build — zero errors
-2. Test with known AI text (ask ChatGPT to write a paragraph
-   about climate change — should score 70+)
-3. Test with known human text (copy a paragraph from a
-   personal blog or Reddit comment — should score under 40)
-4. Test with mixed text (write a sentence, then paste an
-   AI sentence, alternate — should score "mixed")
-5. Test with very short text (one sentence) — should work
-   but show low confidence
-6. Test sentence highlighting — hover over individual
-   sentences, verify tooltip shows correct data
-7. Verify colour coding matches the legend
-8. Verify "Analyze Another" clears everything
-9. Verify /tools page shows 5 tools with "Launch"
-10. Test mobile layout
+2. Test with a biased job listing: "We are looking for a
+   young, energetic rockstar developer. He should have 10+
+   years of experience and be willing to work in our
+   fast-paced office. The ideal candidate is a culture fit
+   who enjoys beer Fridays and ping pong."
+   — should score 50+ with demographic, stereotyping,
+   and assumption findings
+3. Test with a well-written inclusive text — should score
+   under 25 with positive feedback
+4. Test with context provided — should give more targeted
+   analysis
+5. Verify the "problematic → suggested rewrite" format
+   for instances
+6. Verify "Check Another" clears everything
+7. Verify /tools page shows 6 tools
+8. Test mobile layout
 
 ## Constraints
 
-- Same rate limiter, same error handling pattern as other tools
-- Never store the user's text
-- The sentence-level analysis is the hardest part — the
-  OpenAI prompt must return the EXACT sentence text from
-  the original input so the client can match and highlight.
-  If the sentences don't match exactly, the highlighting
-  breaks. Add a fallback: if a sentence from the API doesn't
-  match the original text, skip its highlighting rather than
-  showing mismatched data.
-- The colour legend for sentence highlighting is critical —
-  without it, users won't understand what the colours mean
-- Confidence score is important — it prevents the tool from
-  being overconfident on edge cases (technical writing,
-  formal business emails)
-- Educational note should be specific to THIS text, not
-  generic advice
+- Same patterns as all other tools: rate limiter, error
+  handling, never store content, OpenAI via fetch
+- The tone must be CONSTRUCTIVE, not accusatory. This tool
+  educates, it doesn't shame. The system prompt reinforces
+  this but the UI should too — use positive framing like
+  "How to Improve" not "What's Wrong"
+- The "Positive Aspects" section is mandatory — even heavily
+  biased text should get acknowledged for anything it does
+  well. This builds user trust.
+- Lower score = better (unlike email analyzer). Make sure
+  the UI messaging is consistent with this.
+- The optional context field is a differentiator — it lets
+  users tell the AI "this is a job listing" or "this targets
+  women" so the analysis is calibrated. Keep it optional
+  but visible.
+
+## Animations
+
+- Same patterns as other tools
+- Instance cards: staggered entrance
+- "Problematic → Improved" comparison should have a subtle
+  transition effect — the problematic excerpt fades slightly
+  and the improvement slides in beside/below it
+- All respect prefers-reduced-motion
+
+## Responsive
+
+- Mobile: single column, instance cards full width,
+  comparison blocks stack vertically
+- Desktop: max-w-4xl, comfortable spacing

@@ -5,7 +5,7 @@ import Link from "next/link";
 import { HeroCanvas } from "@/components/ui/HeroCanvas";
 import { ToolCard } from "@/components/ui/ToolCard";
 import { NewsletterForm } from "@/components/ui/NewsletterForm";
-import { ShieldIcon, ScanIcon, BookIcon, DetectorIcon } from "@/components/ui/icons";
+import { ShieldIcon, ScanIcon, BookIcon, DetectorIcon, BalanceIcon } from "@/components/ui/icons";
 
 const tools = [
   {
@@ -35,6 +35,13 @@ const tools = [
     description: "Detect AI-generated text with sentence-level highlighting and 5 detection signals.",
     status: "live" as const,
     href: "/tools/ai-content-detector",
+  },
+  {
+    icon: <BalanceIcon />,
+    title: "AI Bias Checker",
+    description: "Detect bias in AI outputs with specific instances and rewrite suggestions.",
+    status: "live" as const,
+    href: "/tools/ai-bias-checker",
   },
 ];
 
