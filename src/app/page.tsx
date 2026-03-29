@@ -89,7 +89,7 @@ export default function Home() {
               Explore Tools
             </Link>
             <a
-              href="#newsletter"
+              href="/#newsletter"
               className="rounded-lg border border-border-hover px-8 py-3 font-medium text-text-primary hover:border-accent hover:text-accent transition-colors"
             >
               Join Newsletter
