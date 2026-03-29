@@ -46,6 +46,9 @@ export function Footer() {
                 GoSmartR
               </a>
             </span>
+            <a href="mailto:hello@nestcipher.com" className="text-text-muted text-xs hover:text-accent transition-colors">
+              hello@nestcipher.com
+            </a>
             <div className="flex items-center gap-3 text-text-muted">
               <a href="https://github.com/ganchoiliev/" target="_blank" rel="noopener noreferrer" className="hover:text-accent transition-colors" aria-label="GitHub">
                 <GithubIcon />

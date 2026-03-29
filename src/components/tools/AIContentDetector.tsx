@@ -21,6 +21,18 @@ const SCORE_RANGES = [
   { range: "81–100", label: "AI", description: "Text is very likely AI-generated.", min: 81, max: 100 },
 ];
 
+const EXAMPLE_AI = `In today's rapidly evolving technological landscape, artificial intelligence has emerged as a transformative force reshaping virtually every aspect of our daily lives. It is important to note that while these advancements bring tremendous benefits, they also raise crucial questions about ethics and privacy. Furthermore, the integration of machine learning algorithms has streamlined operations across multiple sectors.`;
+
+const EXAMPLE_HUMAN = `Look, I know everyone is going on about AI these days and honestly? Half of it is hype. I tried using ChatGPT to write my cover letter last month and it came out sounding like a robot wrote it. My friend Sarah told me she can spot AI applications a mile off. Nobody talks like that. Real people ramble and go off on tangents.`;
+
+const SIGNAL_EXPLANATIONS: Record<string, string> = {
+  "Perplexity & Predictability": "How surprising and varied the word choices are. AI text tends to always pick the most expected next word.",
+  "Burstiness & Rhythm": "Whether sentence lengths vary naturally. Humans mix short and long sentences \u2014 AI tends to be uniform.",
+  "Vocabulary & Phrasing": "Whether the text uses phrases that AI models commonly overuse, like \u2018delve\u2019, \u2018crucial\u2019, or \u2018it\u2019s important to note\u2019.",
+  "Structural Patterns": "Whether the text follows a predictable formula \u2014 clean intro, balanced paragraphs, tidy conclusion.",
+  "Authenticity Markers": "Whether the text has a personal voice \u2014 opinions, humour, specific experiences, contractions, colloquialisms.",
+};
+
 // ── Colors ──
 
 function verdictColor(verdict: ContentVerdict): string {
@@ -105,7 +117,22 @@ function SignalCard({ signal, index }: { signal: DetectionSignal; index: number 
       style={{ borderLeftWidth: 2, borderLeftColor: color }}
     >
       <div className="flex items-center justify-between mb-3">
-        <h3 className="font-mono text-sm font-semibold text-text-primary">{signal.name}</h3>
+        <span className="flex items-center gap-1.5 relative group">
+          <h3 className="font-mono text-sm font-semibold text-text-primary">{signal.name}</h3>
+          {SIGNAL_EXPLANATIONS[signal.name] && (
+            <>
+              <svg className="w-3.5 h-3.5 text-text-muted shrink-0" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.5">
+                <circle cx="8" cy="8" r="6.5" />
+                <line x1="8" y1="7" x2="8" y2="11" strokeLinecap="round" />
+                <circle cx="8" cy="5" r="0.5" fill="currentColor" stroke="none" />
+              </svg>
+              <span className="absolute left-0 bottom-full mb-1.5 z-50 hidden group-hover:block w-64 rounded-lg px-3 py-2 text-xs text-text-secondary"
+                style={{ backgroundColor: "#1A1A25", border: "1px solid rgba(255,255,255,0.1)", boxShadow: "0 10px 25px rgba(0,0,0,0.5)" }}>
+                {SIGNAL_EXPLANATIONS[signal.name]}
+              </span>
+            </>
+          )}
+        </span>
         <span className={`rounded-full px-2.5 py-0.5 text-xs font-medium ${verdictBadgeClasses(signal.verdict)}`}>
           {verdictLabel(signal.verdict)}
         </span>
@@ -393,7 +420,7 @@ export function AIContentDetector() {
             placeholder:text-text-muted focus:outline-none focus:border-accent focus:ring-1 focus:ring-accent
             transition-colors disabled:opacity-50"
         />
-        <div className="flex items-center justify-between mt-2 mb-4">
+        <div className="flex items-center justify-between mt-2 mb-2">
           <p className="text-xs text-text-muted">
             Privacy: Your text is sent to our secure API for analysis and is never stored, logged, or shared.
           </p>
@@ -401,6 +428,30 @@ export function AIContentDetector() {
             {content.length.toLocaleString()} / 10,000
           </span>
         </div>
+
+        {/* Quick start examples */}
+        {!loading && !result && (
+          <div className="mb-4">
+            <p className="text-xs text-text-muted mb-2">Quick start:</p>
+            <div className="flex flex-col sm:flex-row gap-2">
+              <button
+                type="button"
+                onClick={() => setContent(EXAMPLE_AI)}
+                className="rounded-full border border-border-subtle px-3 py-1 text-xs text-text-muted hover:border-accent hover:text-accent transition-colors"
+              >
+                Try AI-generated text
+              </button>
+              <button
+                type="button"
+                onClick={() => setContent(EXAMPLE_HUMAN)}
+                className="rounded-full border border-border-subtle px-3 py-1 text-xs text-text-muted hover:border-accent hover:text-accent transition-colors"
+              >
+                Try human-written text
+              </button>
+            </div>
+          </div>
+        )}
+
         <button
           type="submit"
           disabled={loading || !content.trim()}
@@ -517,6 +568,13 @@ export function AIContentDetector() {
                   transition={{ duration: 0.8, ease: "easeOut", delay: 0.3 }}
                 />
               </div>
+              <p className="mt-1.5 text-xs text-text-muted">
+                {result.confidence < 50
+                  ? "Low confidence \u2014 this text is too short or too formal for a definitive assessment."
+                  : result.confidence <= 75
+                  ? "Moderate confidence \u2014 the analysis is indicative but not conclusive."
+                  : "High confidence \u2014 the detection signals strongly agree."}
+              </p>
             </div>
 
             {/* Score explainer */}

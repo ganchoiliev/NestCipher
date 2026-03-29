@@ -51,6 +51,22 @@ export default function AboutPage() {
         </p>
       </motion.section>
 
+      {/* Contact */}
+      <motion.section
+        initial={{ opacity: 0, y: 20 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ duration: 0.5, delay: 0.25 }}
+        className="mt-16"
+      >
+        <h2 className="font-mono text-2xl font-bold">Get in touch</h2>
+        <p className="mt-4 text-text-secondary leading-relaxed">
+          Got feedback, ideas, or just want to say hi? Reach out at{" "}
+          <a href="mailto:hello@nestcipher.com" className="text-accent hover:underline">
+            hello@nestcipher.com
+          </a>
+        </p>
+      </motion.section>
+
       {/* Tech stack */}
       <motion.section
         initial={{ opacity: 0, y: 20 }}

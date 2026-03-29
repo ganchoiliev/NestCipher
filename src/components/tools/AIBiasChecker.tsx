@@ -61,6 +61,20 @@ function severityColor(severity: "low" | "medium" | "high"): string {
   }
 }
 
+const EXAMPLE_BIASED = `We are looking for a young, energetic rockstar developer. He should have 10+ years of experience and be willing to work in our fast-paced office. The ideal candidate is a culture fit who enjoys beer Fridays and ping pong. Must be a native English speaker with a strong work ethic.`;
+const EXAMPLE_BIASED_CONTEXT = "Job listing for a software engineer";
+
+const EXAMPLE_INCLUSIVE = `We are seeking a software engineer to join our distributed team. Candidates of all experience levels are encouraged to apply. We offer flexible working arrangements, inclusive team activities, and comprehensive benefits. Our team values diverse perspectives. Proficiency in Python or JavaScript is required. We provide reasonable accommodations during the interview process.`;
+const EXAMPLE_INCLUSIVE_CONTEXT = "Job listing for a software engineer";
+
+const CATEGORY_EXPLANATIONS: Record<BiasCategory, string> = {
+  demographic: "Does the text favor or exclude people based on gender, age, race, nationality, or other demographic traits?",
+  stereotyping: "Does the text reinforce generalizations about groups \u2014 like \u2018women are nurturing\u2019 or \u2018millennials are lazy\u2019?",
+  representation: "Does the text consistently show one perspective while ignoring others \u2014 like assuming everyone is Western, male, or able-bodied?",
+  assumption: "Does the text assume things about the reader \u2014 like their income, education, family structure, or cultural background?",
+  framing: "How does the text frame issues \u2014 is one viewpoint treated as \u2018normal\u2019 while others are presented as \u2018different\u2019?",
+};
+
 const CATEGORY_LABELS: Record<BiasCategory, string> = {
   demographic: "Demographic",
   stereotyping: "Stereotyping",
@@ -121,7 +135,22 @@ function BiasCategoryCard({ cat, index }: { cat: BiasCategoryAnalysis; index: nu
       style={{ borderLeftWidth: 2, borderLeftColor: color }}
     >
       <div className="flex items-center justify-between mb-3">
-        <h3 className="font-mono text-sm font-semibold text-text-primary">{cat.name}</h3>
+        <span className="flex items-center gap-1.5 relative group">
+          <h3 className="font-mono text-sm font-semibold text-text-primary">{cat.name}</h3>
+          {CATEGORY_EXPLANATIONS[cat.category] && (
+            <>
+              <svg className="w-3.5 h-3.5 text-text-muted shrink-0" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.5">
+                <circle cx="8" cy="8" r="6.5" />
+                <line x1="8" y1="7" x2="8" y2="11" strokeLinecap="round" />
+                <circle cx="8" cy="5" r="0.5" fill="currentColor" stroke="none" />
+              </svg>
+              <span className="absolute left-0 bottom-full mb-1.5 z-50 hidden group-hover:block w-64 rounded-lg px-3 py-2 text-xs text-text-secondary"
+                style={{ backgroundColor: "#1A1A25", border: "1px solid rgba(255,255,255,0.1)", boxShadow: "0 10px 25px rgba(0,0,0,0.5)" }}>
+                {CATEGORY_EXPLANATIONS[cat.category]}
+              </span>
+            </>
+          )}
+        </span>
         <span className={`rounded-full px-2.5 py-0.5 text-xs font-medium ${levelBadgeClasses(cat.level)}`}>
           {levelLabel(cat.level)}
         </span>
@@ -177,15 +206,6 @@ function BiasInstanceCard({ instance, index }: { instance: BiasInstance; index: 
         </span>
       </div>
 
-      {/* Excerpt */}
-      <div
-        className="rounded-lg bg-bg-elevated p-3 mb-3"
-        style={{ borderLeftWidth: 2, borderLeftColor: `${sevColor}80` }}
-      >
-        <p className="text-xs font-medium text-text-muted mb-1 uppercase tracking-wider">Excerpt</p>
-        <p className="font-mono text-sm text-text-primary leading-relaxed">&ldquo;{instance.excerpt}&rdquo;</p>
-      </div>
-
       {/* Issue & Impact */}
       <p className="text-sm text-text-secondary mb-1">
         <span className="font-medium text-text-primary">Issue:</span> {instance.issue}
@@ -194,12 +214,29 @@ function BiasInstanceCard({ instance, index }: { instance: BiasInstance; index: 
         <span className="font-medium text-text-primary">Impact:</span> {instance.impact}
       </p>
 
-      {/* Suggested rewrite */}
+      {/* Original excerpt */}
+      <div
+        className="rounded-lg bg-bg-elevated/70 p-3"
+        style={{ borderLeftWidth: 2, borderLeftColor: `${sevColor}80` }}
+      >
+        <p className="text-[10px] font-medium text-text-muted mb-1 uppercase tracking-wider">Original</p>
+        <p className="font-mono text-sm text-text-primary leading-relaxed opacity-80">&ldquo;{instance.excerpt}&rdquo;</p>
+      </div>
+
+      {/* Arrow */}
+      <div className="flex justify-center py-1.5">
+        <svg className="w-4 h-4 text-text-muted" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+          <line x1="12" y1="5" x2="12" y2="19" />
+          <polyline points="19 12 12 19 5 12" />
+        </svg>
+      </div>
+
+      {/* Improved rewrite */}
       <div
         className="rounded-lg bg-bg-elevated p-3"
         style={{ borderLeftWidth: 2, borderLeftColor: "#00D4AA" }}
       >
-        <p className="text-xs font-medium text-[#00D4AA] mb-1 uppercase tracking-wider">Suggested Rewrite</p>
+        <p className="text-[10px] font-medium text-[#00D4AA] mb-1 uppercase tracking-wider">Improved</p>
         <p className="text-sm text-text-secondary leading-relaxed">{instance.suggestion}</p>
       </div>
     </motion.div>
@@ -348,28 +385,64 @@ export function AIBiasChecker() {
           </span>
         </div>
 
+        {/* Quick start examples */}
+        {!loading && !result && (
+          <div className="mb-4">
+            <p className="text-xs text-text-muted mb-2">Quick start:</p>
+            <div className="flex flex-col sm:flex-row gap-2">
+              <button
+                type="button"
+                onClick={() => { setContent(EXAMPLE_BIASED); setContext(EXAMPLE_BIASED_CONTEXT); setContextOpen(true); }}
+                className="rounded-full border border-border-subtle px-3 py-1 text-xs text-text-muted hover:border-accent hover:text-accent transition-colors"
+              >
+                Try biased text
+              </button>
+              <button
+                type="button"
+                onClick={() => { setContent(EXAMPLE_INCLUSIVE); setContext(EXAMPLE_INCLUSIVE_CONTEXT); setContextOpen(true); }}
+                className="rounded-full border border-border-subtle px-3 py-1 text-xs text-text-muted hover:border-accent hover:text-accent transition-colors"
+              >
+                Try inclusive text
+              </button>
+            </div>
+          </div>
+        )}
+
         {/* Optional context field */}
         <div className="mb-4">
-          <button
-            type="button"
-            onClick={() => setContextOpen((prev) => !prev)}
-            className="flex items-center gap-1.5 text-xs text-text-muted hover:text-text-secondary transition-colors"
-          >
-            {contextOpen ? "Hide context" : "Add context (optional)"}
-            <motion.svg
-              animate={{ rotate: contextOpen ? 180 : 0 }}
-              transition={{ duration: 0.2 }}
-              className="w-3.5 h-3.5"
-              viewBox="0 0 24 24"
-              fill="none"
-              stroke="currentColor"
-              strokeWidth="2"
-              strokeLinecap="round"
-              strokeLinejoin="round"
+          <div className="flex items-center gap-1.5">
+            <button
+              type="button"
+              onClick={() => setContextOpen((prev) => !prev)}
+              className="flex items-center gap-1.5 text-xs text-text-muted hover:text-text-secondary transition-colors"
             >
-              <polyline points="6 9 12 15 18 9" />
-            </motion.svg>
-          </button>
+              {contextOpen ? "Hide context" : "Add context (optional)"}
+              <motion.svg
+                animate={{ rotate: contextOpen ? 180 : 0 }}
+                transition={{ duration: 0.2 }}
+                className="w-3.5 h-3.5"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                strokeWidth="2"
+                strokeLinecap="round"
+                strokeLinejoin="round"
+              >
+                <polyline points="6 9 12 15 18 9" />
+              </motion.svg>
+            </button>
+            <span className="relative group">
+              <svg className="w-3.5 h-3.5 text-text-muted cursor-help" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.5">
+                <circle cx="8" cy="8" r="6.5" />
+                <line x1="8" y1="7" x2="8" y2="11" strokeLinecap="round" />
+                <circle cx="8" cy="5" r="0.5" fill="currentColor" stroke="none" />
+              </svg>
+              <span className="absolute left-0 bottom-full mb-1.5 z-50 hidden group-hover:block w-64 rounded-lg px-3 py-2 text-xs text-text-secondary"
+                style={{ backgroundColor: "#1A1A25", border: "1px solid rgba(255,255,255,0.1)", boxShadow: "0 10px 25px rgba(0,0,0,0.5)" }}>
+                Adding context helps the AI understand the text&apos;s purpose. A job listing, product description, and chatbot response each have different bias considerations.
+              </span>
+            </span>
+          </div>
           <AnimatePresence>
             {contextOpen && (
               <motion.div
@@ -505,6 +578,19 @@ export function AIBiasChecker() {
               <p className="mt-1 text-sm text-text-secondary">{result.summary}</p>
             </div>
 
+            {/* Score explanation */}
+            <p className="mt-3 text-xs text-text-muted max-w-md">
+              {result.overallScore <= 15
+                ? "This text shows minimal bias. Well done."
+                : result.overallScore <= 35
+                ? "Minor bias detected. Small adjustments would improve inclusivity."
+                : result.overallScore <= 60
+                ? "Noticeable bias present. Review the instances below and apply suggestions."
+                : result.overallScore <= 80
+                ? "Significant bias detected. This text needs revision before publishing."
+                : "Severe bias detected. Major rewriting recommended."}
+            </p>
+
             {/* Score explainer */}
             <div className="mt-4 w-full max-w-xl">
               <button
@@ -577,10 +663,27 @@ export function AIBiasChecker() {
                 : "No Bias Instances Found"}
             </h2>
             {result.instances.length > 0 ? (
-              <div className="space-y-4">
-                {result.instances.map((instance, i) => (
-                  <BiasInstanceCard key={instance.id} instance={instance} index={i} />
-                ))}
+              <div>
+                {/* Severity legend */}
+                <div className="flex flex-wrap items-center gap-4 text-xs text-text-muted mb-4">
+                  <span className="flex items-center gap-1.5">
+                    <span className="inline-block w-2.5 h-2.5 rounded-full bg-[#22C55E]" />
+                    Low — subtle or unconscious
+                  </span>
+                  <span className="flex items-center gap-1.5">
+                    <span className="inline-block w-2.5 h-2.5 rounded-full bg-[#F59E0B]" />
+                    Medium — noticeable bias
+                  </span>
+                  <span className="flex items-center gap-1.5">
+                    <span className="inline-block w-2.5 h-2.5 rounded-full bg-[#EF4444]" />
+                    High — overt or harmful
+                  </span>
+                </div>
+                <div className="space-y-4">
+                  {result.instances.map((instance, i) => (
+                    <BiasInstanceCard key={instance.id} instance={instance} index={i} />
+                  ))}
+                </div>
               </div>
             ) : (
               <p className="text-sm text-[#00D4AA]">

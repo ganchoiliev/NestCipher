@@ -18,9 +18,38 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
+  metadataBase: new URL("https://nestcipher.com"),
   title: "Nest Cipher — Free AI-Powered Security Tools",
   description:
-    "Scan. Analyze. Protect. Open tools for developers and security professionals.",
+    "Free security toolkit for developers. Scan headers, detect phishing, test prompt injections, check AI content and bias. No sign-ups, no ads, no cookies.",
+  openGraph: {
+    title: "Nest Cipher — Free AI-Powered Security Tools",
+    description:
+      "Free security toolkit for developers. Scan headers, detect phishing, test prompt injections, check AI content and bias. No sign-ups, no ads, no cookies.",
+    url: "https://nestcipher.com",
+    siteName: "Nest Cipher",
+    type: "website",
+    images: ["/opengraph-image"],
+  },
+  twitter: {
+    card: "summary_large_image",
+    title: "Nest Cipher — Free AI-Powered Security Tools",
+    description:
+      "Free security toolkit for developers. Scan headers, detect phishing, test prompt injections, check AI content and bias.",
+    images: ["/opengraph-image"],
+  },
+  icons: {
+    icon: [
+      { url: "/favicon.ico", sizes: "256x256", type: "image/x-icon" },
+      { url: "/favicon.svg", type: "image/svg+xml" },
+    ],
+    apple: [
+      { url: "/apple-touch-icon.png", sizes: "180x180", type: "image/png" },
+    ],
+  },
+  alternates: {
+    canonical: "https://nestcipher.com",
+  },
 };
 
 export default function RootLayout({
@@ -35,6 +64,22 @@ export default function RootLayout({
       suppressHydrationWarning
     >
       <head>
+        <script
+          type="application/ld+json"
+          dangerouslySetInnerHTML={{
+            __html: JSON.stringify({
+              "@context": "https://schema.org",
+              "@type": "WebApplication",
+              name: "Nest Cipher",
+              url: "https://nestcipher.com",
+              description: "Free AI-powered security toolkit for developers and security professionals.",
+              applicationCategory: "SecurityApplication",
+              operatingSystem: "Web",
+              offers: { "@type": "Offer", price: "0", priceCurrency: "GBP" },
+              author: { "@type": "Organization", name: "GoSmartR", url: "https://gosmartr.co.uk" },
+            }),
+          }}
+        />
         <Script
           src="https://plausible.io/js/pa-FOyFgrwIcEk2zlKADZTcX.js"
           strategy="afterInteractive"
