@@ -41,68 +41,6 @@ export function EmailAnalyzerSkeleton() {
   );
 }
 
-// ── AI Content Detector skeleton layout ──
-
-export function AIContentDetectorSkeleton() {
-  return (
-    <motion.div
-      initial={{ opacity: 0 }}
-      animate={{ opacity: 1 }}
-      transition={{ duration: 0.2 }}
-      className="mt-12 flex flex-col items-center gap-6"
-    >
-      {/* Score circle placeholder */}
-      <SkeletonShimmer className="w-[120px] h-[120px] rounded-full" />
-
-      {/* Verdict badge placeholder */}
-      <SkeletonShimmer className="w-[100px] h-5 rounded-full" />
-
-      {/* Sentence analysis block placeholder */}
-      <SkeletonShimmer className="w-full h-[60px] rounded-lg mt-2" />
-
-      {/* Signal cards placeholder */}
-      <div className="w-full space-y-3 mt-2">
-        {[1, 2, 3, 4, 5].map((i) => (
-          <SkeletonShimmer key={i} className="h-20 rounded-lg w-full" />
-        ))}
-      </div>
-    </motion.div>
-  );
-}
-
-// ── AI Bias Checker skeleton layout ──
-
-export function AIBiasCheckerSkeleton() {
-  return (
-    <motion.div
-      initial={{ opacity: 0 }}
-      animate={{ opacity: 1 }}
-      transition={{ duration: 0.2 }}
-      className="mt-12 flex flex-col items-center gap-6"
-    >
-      {/* Score circle placeholder */}
-      <SkeletonShimmer className="w-[120px] h-[120px] rounded-full" />
-
-      {/* Level badge placeholder */}
-      <SkeletonShimmer className="w-[100px] h-5 rounded-full" />
-
-      {/* Category cards placeholder */}
-      <div className="w-full space-y-3 mt-2">
-        {[1, 2, 3, 4, 5].map((i) => (
-          <SkeletonShimmer key={i} className="h-20 rounded-lg w-full" />
-        ))}
-      </div>
-
-      {/* Bias instance cards placeholder */}
-      <div className="w-full space-y-3 mt-2">
-        {[1, 2, 3].map((i) => (
-          <SkeletonShimmer key={i} className="h-20 rounded-lg w-full" />
-        ))}
-      </div>
-    </motion.div>
-  );
-}
-
 // ── Headers Scanner skeleton layout ──
 
 export function HeadersScannerSkeleton() {

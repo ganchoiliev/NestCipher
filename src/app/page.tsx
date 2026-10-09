@@ -5,7 +5,7 @@ import Link from "next/link";
 import { HeroCanvas } from "@/components/ui/HeroCanvas";
 import { ToolCard } from "@/components/ui/ToolCard";
 import { NewsletterForm } from "@/components/ui/NewsletterForm";
-import { ShieldIcon, ScanIcon, BookIcon, TargetIcon, DetectorIcon, BalanceIcon } from "@/components/ui/icons";
+import { ShieldIcon, ScanIcon, BookIcon } from "@/components/ui/icons";
 
 const tools = [
   {
@@ -28,27 +28,6 @@ const tools = [
     description: "Interactive explorer of the most critical AI security vulnerabilities.",
     status: "live" as const,
     href: "/tools/owasp-llm-top-10",
-  },
-  {
-    icon: <TargetIcon />,
-    title: "Prompt Injection Tester",
-    description: "Test your AI system prompt against 12 known injection attacks and get hardening recommendations.",
-    status: "live" as const,
-    href: "/tools/prompt-injection-tester",
-  },
-  {
-    icon: <DetectorIcon />,
-    title: "AI Content Detector",
-    description: "Detect AI-generated text with sentence-level highlighting and 5 detection signals.",
-    status: "live" as const,
-    href: "/tools/ai-content-detector",
-  },
-  {
-    icon: <BalanceIcon />,
-    title: "AI Bias Checker",
-    description: "Detect bias in AI outputs with specific instances and rewrite suggestions.",
-    status: "live" as const,
-    href: "/tools/ai-bias-checker",
   },
 ];
 

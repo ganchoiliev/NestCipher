@@ -21,11 +21,11 @@ export const metadata: Metadata = {
   metadataBase: new URL("https://nestcipher.com"),
   title: "Nest Cipher — Free AI-Powered Security Tools",
   description:
-    "Free security toolkit for developers. Scan headers, detect phishing, test prompt injections, check AI content and bias. No sign-ups, no ads, no cookies.",
+    "Free security toolkit for developers. Scan headers, detect phishing, and explore the OWASP LLM Top 10. No sign-ups, no ads, no cookies.",
   openGraph: {
     title: "Nest Cipher — Free AI-Powered Security Tools",
     description:
-      "Free security toolkit for developers. Scan headers, detect phishing, test prompt injections, check AI content and bias. No sign-ups, no ads, no cookies.",
+      "Free security toolkit for developers. Scan headers, detect phishing, and explore the OWASP LLM Top 10. No sign-ups, no ads, no cookies.",
     url: "https://nestcipher.com",
     siteName: "Nest Cipher",
     type: "website",
@@ -35,7 +35,7 @@ export const metadata: Metadata = {
     card: "summary_large_image",
     title: "Nest Cipher — Free AI-Powered Security Tools",
     description:
-      "Free security toolkit for developers. Scan headers, detect phishing, test prompt injections, check AI content and bias.",
+      "Free security toolkit for developers. Scan headers, detect phishing, and explore the OWASP LLM Top 10.",
     images: ["/opengraph-image"],
   },
   icons: {

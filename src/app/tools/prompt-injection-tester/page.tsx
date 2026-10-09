@@ -1,26 +1,32 @@
 import type { Metadata } from "next";
-import { PromptInjectionTester } from "@/components/tools/PromptInjectionTester";
+import Link from "next/link";
 
 export const metadata: Metadata = {
-  title: "Prompt Injection Tester — Test Your LLM System Prompt — Nest Cipher",
+  title: "Prompt Injection Tester — Retired — Nest Cipher",
   description:
-    "Test your AI system prompt against 12 known injection attacks. Get a resilience score and hardening recommendations. Free, no sign-up required.",
-  openGraph: {
-    title: "Prompt Injection Tester — Nest Cipher",
-    description:
-      "Test your AI system prompt against known injection attacks and get hardening recommendations.",
-    type: "website",
-    url: "https://nestcipher.com/tools/prompt-injection-tester",
-    siteName: "Nest Cipher",
-  },
-  twitter: {
-    card: "summary_large_image",
-    title: "Prompt Injection Tester — Nest Cipher",
-    description:
-      "Test your AI system prompt against 12 known injection attacks. Get a resilience score.",
-  },
+    "The Prompt Injection Tester is retired. It is coming back as a canary-based leak test.",
+  robots: { index: false },
 };
 
 export default function PromptInjectionTesterPage() {
-  return <PromptInjectionTester />;
+  return (
+    <div className="mx-auto max-w-2xl px-4 py-24 text-center sm:px-6">
+      <h1 className="font-mono text-3xl font-bold sm:text-4xl">
+        Prompt Injection Tester
+      </h1>
+      <p className="mt-6 text-lg text-text-secondary">
+        Retired. Coming back as a canary-based leak test.
+      </p>
+      <p className="mt-4 text-text-secondary">
+        In the meantime, learn how these attacks actually work in the{" "}
+        <Link
+          href="/tools/owasp-llm-top-10"
+          className="text-accent transition-colors hover:underline"
+        >
+          OWASP LLM Top 10 explorer
+        </Link>
+        .
+      </p>
+    </div>
+  );
 }

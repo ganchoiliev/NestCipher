@@ -1,6 +1,20 @@
 import type { NextConfig } from "next";
 
 const nextConfig: NextConfig = {
+  async redirects() {
+    return [
+      {
+        source: "/tools/ai-content-detector",
+        destination: "/tools",
+        permanent: true, // 308
+      },
+      {
+        source: "/tools/ai-bias-checker",
+        destination: "/tools",
+        permanent: true, // 308
+      },
+    ];
+  },
   async headers() {
     return [
       {
