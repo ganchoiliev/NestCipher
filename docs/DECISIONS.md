@@ -87,3 +87,26 @@ is recomputed with the documented weights, and the final verdict is
 corrections apply, downward never do — a security tool fails toward caution, and
 downward calibration stays the prompt's job, not the maths'. The full
 header-aware fix (SPF/DKIM) belongs to Email X-Ray in Phase 2, not Phase 0.
+
+## 2026-10-09 — Strict nonce CSP via the Next 16 proxy
+
+- `src/proxy.ts` (the renamed middleware; root placement is silently ignored
+  when the app lives under `src/` — caught by a local header check, not by the
+  build) generates a per-request nonce and serves:
+  `default-src 'self'; script-src 'self' 'nonce-…' 'strict-dynamic'` (dev adds
+  `'unsafe-eval'` for React debugging only), `object-src 'none'`,
+  `base-uri 'none'`, `form-action 'self'`, `frame-ancestors 'none'`,
+  `connect-src 'self' https://plausible.io`, `img-src 'self' data:`,
+  `upgrade-insecure-requests`.
+- **Trade-off accepted: every page now renders per request** (`force-dynamic` in
+  the root layout; nonces cannot exist in build-time HTML). A tools site that
+  renders untrusted input needs a strict CSP more than static HTML.
+- `style-src` keeps `'unsafe-inline'`: server-rendered style attributes (React
+  inline styles, Framer Motion initial states) break under a nonce-only style
+  policy, and style injection is not this phase's attack surface.
+- Plausible loader + inline init carry the nonce; BotID rides same-origin
+  rewrites, covered by 'strict-dynamic'.
+- HSTS `max-age=31536000; includeSubDomains` set statically for all routes.
+  Preload deliberately deferred.
+- Scanner CSP scoring is now honest (`src/lib/csp-score.ts`): the site's own
+  pre-rebuild policy scores 2/20 (fail) under it.

@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { fetchHeadersSafely } from "@/lib/safe-fetch";
+import { scoreCsp } from "@/lib/csp-score";
 import { checkRouteLimit } from "@/lib/limits";
 import type {
   ScanResponse,
@@ -46,14 +47,10 @@ const HEADER_CHECKS: HeaderCheck[] = [
     description:
       "Controls which resources the browser is allowed to load, preventing XSS and injection attacks.",
     recommendation:
-      "Add a Content-Security-Policy header. Start with a report-only policy to avoid breaking your site.",
+      "Serve a nonce-based CSP with 'strict-dynamic'. Avoid 'unsafe-inline', 'unsafe-eval' and scheme-wide sources like https:; set object-src 'none' and base-uri 'none'.",
     evaluate(value) {
-      if (!value) return { score: 0, status: "fail" };
-      const stripped = value.replace(/\s/g, "").toLowerCase();
-      if (stripped === "upgrade-insecure-requests") {
-        return { score: 10, status: "partial" };
-      }
-      return { score: 20, status: "pass" };
+      const { score, status } = scoreCsp(value);
+      return { score, status };
     },
   },
   {

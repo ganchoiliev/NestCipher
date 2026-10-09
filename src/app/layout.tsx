@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import { headers } from "next/headers";
 import { Geist, Geist_Mono } from "next/font/google";
 import Script from "next/script";
 import { ThemeProvider } from "@/components/layout/ThemeProvider";
@@ -52,11 +53,15 @@ export const metadata: Metadata = {
   },
 };
 
-export default function RootLayout({
+// Nonce-based CSP requires per-request rendering (docs/DECISIONS.md).
+export const dynamic = "force-dynamic";
+
+export default async function RootLayout({
   children,
 }: Readonly<{
   children: React.ReactNode;
 }>) {
+  const nonce = (await headers()).get("x-nonce") ?? undefined;
   return (
     <html
       lang="en"
@@ -66,6 +71,7 @@ export default function RootLayout({
       <head>
         <script
           type="application/ld+json"
+          nonce={nonce}
           dangerouslySetInnerHTML={{
             __html: JSON.stringify({
               "@context": "https://schema.org",
@@ -83,13 +89,14 @@ export default function RootLayout({
         <Script
           src="https://plausible.io/js/pa-FOyFgrwIcEk2zlKADZTcX.js"
           strategy="afterInteractive"
+          nonce={nonce}
         />
-        <Script id="plausible-init" strategy="afterInteractive">
+        <Script id="plausible-init" strategy="afterInteractive" nonce={nonce}>
           {`window.plausible=window.plausible||function(){(plausible.q=plausible.q||[]).push(arguments)};plausible.init=plausible.init||function(i){plausible.o=i||{}};plausible.init();`}
         </Script>
       </head>
       <body className="min-h-full flex flex-col bg-background text-foreground">
-        <ThemeProvider>
+        <ThemeProvider nonce={nonce}>
           <Navbar />
           <main className="flex-1 pt-16">
             <PageTransition>{children}</PageTransition>
