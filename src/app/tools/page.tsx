@@ -1,7 +1,6 @@
 "use client";
 
 import { useState } from "react";
-import { motion } from "framer-motion";
 import Link from "next/link";
 import { ToolCard } from "@/components/ui/ToolCard";
 import { ShieldIcon, ScanIcon, BookIcon } from "@/components/ui/icons";
@@ -69,15 +68,13 @@ export default function ToolsPage() {
       {/* Tools grid */}
       <div className="mt-12 grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
         {tools.map((tool, i) => (
-          <motion.div
+          <div
             key={tool.title}
-            initial={{ opacity: 0, y: 20 }}
-            whileInView={{ opacity: 1, y: 0 }}
-            viewport={{ once: true, margin: "-50px" }}
-            transition={{ duration: 0.4, delay: i * 0.1 }}
+            className="rise-in"
+            style={{ animationDelay: `${i * 0.1}s` }}
           >
             <ToolCard {...tool} />
-          </motion.div>
+          </div>
         ))}
       </div>
     </div>

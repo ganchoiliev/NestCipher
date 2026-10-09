@@ -5,7 +5,6 @@ import Script from "next/script";
 import { ThemeProvider } from "@/components/layout/ThemeProvider";
 import { Navbar } from "@/components/layout/Navbar";
 import { Footer } from "@/components/layout/Footer";
-import { PageTransition } from "@/components/layout/PageTransition";
 import "./globals.css";
 
 const geistSans = Geist({
@@ -99,7 +98,7 @@ export default async function RootLayout({
         <ThemeProvider nonce={nonce}>
           <Navbar />
           <main className="flex-1 pt-16">
-            <PageTransition>{children}</PageTransition>
+            {children}
           </main>
           <Footer />
         </ThemeProvider>

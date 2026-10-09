@@ -1,7 +1,3 @@
-"use client";
-
-import { motion } from "framer-motion";
-
 const techStack = [
   "Next.js",
   "TypeScript",
@@ -16,11 +12,7 @@ export default function AboutPage() {
   return (
     <div className="mx-auto max-w-4xl px-4 py-16 sm:px-6 lg:px-8">
       {/* Mission */}
-      <motion.section
-        initial={{ opacity: 0, y: 20 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ duration: 0.5 }}
-      >
+      <section className="rise-in">
         <h1 className="font-mono text-3xl font-bold sm:text-4xl">About Nest Cipher</h1>
         <div className="mt-6 space-y-4 text-text-secondary leading-relaxed">
           <p>
@@ -33,15 +25,10 @@ export default function AboutPage() {
             give you actionable insights in seconds — not hours.
           </p>
         </div>
-      </motion.section>
+      </section>
 
       {/* Who */}
-      <motion.section
-        initial={{ opacity: 0, y: 20 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ duration: 0.5, delay: 0.15 }}
-        className="mt-16"
-      >
+      <section className="rise-in mt-16" style={{ animationDelay: "0.15s" }}>
         <h2 className="font-mono text-2xl font-bold">Who&apos;s behind this</h2>
         <p className="mt-4 text-text-secondary leading-relaxed">
           I&apos;m Gancho — a web developer and cybersecurity enthusiast based in Surrey, UK.
@@ -49,15 +36,10 @@ export default function AboutPage() {
           gate useful functionality behind sign-ups or paywalls. Every tool here is something
           I&apos;d actually use myself.
         </p>
-      </motion.section>
+      </section>
 
       {/* Contact */}
-      <motion.section
-        initial={{ opacity: 0, y: 20 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ duration: 0.5, delay: 0.25 }}
-        className="mt-16"
-      >
+      <section className="rise-in mt-16" style={{ animationDelay: "0.25s" }}>
         <h2 className="font-mono text-2xl font-bold">Get in touch</h2>
         <p className="mt-4 text-text-secondary leading-relaxed">
           Got feedback, ideas, or just want to say hi? Reach out at{" "}
@@ -65,15 +47,10 @@ export default function AboutPage() {
             hello@nestcipher.com
           </a>
         </p>
-      </motion.section>
+      </section>
 
       {/* Tech stack */}
-      <motion.section
-        initial={{ opacity: 0, y: 20 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ duration: 0.5, delay: 0.3 }}
-        className="mt-16"
-      >
+      <section className="rise-in mt-16" style={{ animationDelay: "0.3s" }}>
         <h2 className="font-mono text-2xl font-bold">Built with</h2>
         <div className="mt-6 flex flex-wrap gap-3">
           {techStack.map((tech) => (
@@ -85,7 +62,7 @@ export default function AboutPage() {
             </span>
           ))}
         </div>
-      </motion.section>
+      </section>
     </div>
   );
 }

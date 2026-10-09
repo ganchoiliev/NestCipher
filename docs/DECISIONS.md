@@ -110,3 +110,23 @@ header-aware fix (SPF/DKIM) belongs to Email X-Ray in Phase 2, not Phase 0.
   Preload deliberately deferred.
 - Scanner CSP scoring is now honest (`src/lib/csp-score.ts`): the site's own
   pre-rebuild policy scores 2/20 (fail) under it.
+
+## 2026-10-09 — Progressive enhancement: CSS owns the entrances
+
+- The `PageTransition` opacity wrapper is deleted. It blanked the whole site
+  without JS and caused a reproducible dead first click on tool pages while
+  hydration raced the overlay (seen live twice during testing).
+- All framer-motion `initial={{opacity: 0}}` entrance animations on home,
+  /tools and /about are replaced with a CSS-only `.rise-in` keyframe
+  animation: identical visual effect, runs without JavaScript, honours
+  `prefers-reduced-motion`. Framer stays for genuinely interactive motion
+  (mobile menu, tooltips, tool internals).
+- Home and About pages are server components again.
+- The two interactive tools carry a `<noscript>` line; everything else
+  renders fully without JS — proven by `npm run test:e2e`
+  (tests/e2e/no-js.spec.ts, JavaScript disabled, asserting COMPUTED opacity,
+  since Playwright's toBeVisible treats opacity:0 as visible).
+- e2e runs with Playwright's own Chromium (`npx playwright install chromium`
+  once per machine) or any Chromium via `PW_EXECUTABLE=`. Deliberately NOT in
+  the `build` script: Vercel's build image has no browser.
+- `poweredByHeader: false` — the scanner's own advice, applied to ourselves.
