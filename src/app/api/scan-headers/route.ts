@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
+import { fetchHeadersSafely } from "@/lib/safe-fetch";
 import type {
   ScanResponse,
   HeaderResult,
@@ -6,68 +7,9 @@ import type {
   HeaderStatus,
 } from "@/types/headers-scanner";
 
-// ── SSRF Protection ──
-
-function isPrivateIP(hostname: string): boolean {
-  if (
-    hostname === "localhost" ||
-    hostname === "0.0.0.0" ||
-    hostname === "[::1]"
-  ) {
-    return true;
-  }
-
-  // Check IPv4 private ranges
-  const ipv4Match = hostname.match(/^(\d+)\.(\d+)\.(\d+)\.(\d+)$/);
-  if (ipv4Match) {
-    const [, a, b] = ipv4Match.map(Number);
-    if (a === 127) return true; // 127.x.x.x
-    if (a === 10) return true; // 10.x.x.x
-    if (a === 192 && b === 168) return true; // 192.168.x.x
-    if (a === 172 && b >= 16 && b <= 31) return true; // 172.16-31.x.x
-    if (a === 0) return true; // 0.x.x.x
-    if (a === 169 && b === 254) return true; // 169.254.x.x (link-local)
-  }
-
-  return false;
-}
-
-function normalizeUrl(input: string): string {
-  let url = input.trim();
-  if (!/^https?:\/\//i.test(url)) {
-    url = `https://${url}`;
-  }
-  return url;
-}
-
-function validateUrl(input: string): { valid: boolean; url?: string; error?: string } {
-  if (!input || input.trim().length === 0) {
-    return { valid: false, error: "Please enter a valid URL (e.g. google.com or https://example.com)" };
-  }
-
-  if (input.length > 2048) {
-    return { valid: false, error: "URL is too long (max 2048 characters)." };
-  }
-
-  const normalized = normalizeUrl(input);
-
-  let parsed: URL;
-  try {
-    parsed = new URL(normalized);
-  } catch {
-    return { valid: false, error: "Please enter a valid URL (e.g. google.com or https://example.com)" };
-  }
-
-  if (!["http:", "https:"].includes(parsed.protocol)) {
-    return { valid: false, error: "Only HTTP and HTTPS URLs are supported." };
-  }
-
-  if (isPrivateIP(parsed.hostname)) {
-    return { valid: false, error: "Scanning internal or private addresses is not allowed." };
-  }
-
-  return { valid: true, url: normalized };
-}
+// SSRF protection lives in src/lib/ssrf-guard.ts and src/lib/safe-fetch.ts:
+// WHATWG parsing, default ports only, unicast-only DNS classification, and a
+// connect-time pinned lookup that defeats rebinding. See docs/THREAT-MODEL.md.
 
 // ── Header Scoring ──
 
@@ -118,7 +60,7 @@ const HEADER_CHECKS: HeaderCheck[] = [
     maxScore: 10,
     description:
       "Prevents browsers from MIME-sniffing a response away from the declared content-type, reducing drive-by download attacks.",
-    recommendation: 'Add the header: X-Content-Type-Options: nosniff',
+    recommendation: "Add the header: X-Content-Type-Options: nosniff",
     evaluate(value) {
       if (value?.toLowerCase() === "nosniff") {
         return { score: 10, status: "pass" };
@@ -148,7 +90,7 @@ const HEADER_CHECKS: HeaderCheck[] = [
     description:
       "Controls how much referrer information is sent with requests, reducing information leakage to third parties.",
     recommendation:
-      'Add the header: Referrer-Policy: strict-origin-when-cross-origin',
+      "Add the header: Referrer-Policy: strict-origin-when-cross-origin",
     evaluate(value) {
       if (!value) return { score: 0, status: "fail" };
       const valid = [
@@ -182,7 +124,7 @@ const HEADER_CHECKS: HeaderCheck[] = [
     name: "X-XSS-Protection",
     maxScore: 5,
     description:
-      "Legacy XSS filter. Modern best practice is to set it to \"0\" and rely on CSP instead, as the filter itself can introduce vulnerabilities.",
+      'Legacy XSS filter. Modern best practice is to set it to "0" and rely on CSP instead, as the filter itself can introduce vulnerabilities.',
     recommendation:
       "Set X-XSS-Protection: 0 and rely on a strong Content-Security-Policy instead.",
     evaluate(value) {
@@ -241,6 +183,15 @@ function calculateGrade(score: number): GradeLevel {
   return "F";
 }
 
+function headerValue(
+  headers: Record<string, string | string[] | undefined>,
+  name: string
+): string | null {
+  const v = headers[name.toLowerCase()];
+  if (v === undefined) return null;
+  return Array.isArray(v) ? v.join(", ") : v;
+}
+
 // ── Route Handler ──
 
 export async function POST(request: NextRequest) {
@@ -248,69 +199,19 @@ export async function POST(request: NextRequest) {
   try {
     body = await request.json();
   } catch {
-    return NextResponse.json(
-      { error: "Invalid JSON body." },
-      { status: 400 }
-    );
+    return NextResponse.json({ error: "Invalid JSON body." }, { status: 400 });
   }
 
-  const validation = validateUrl(body.url ?? "");
-  if (!validation.valid) {
-    return NextResponse.json({ error: validation.error }, { status: 400 });
+  const result = await fetchHeadersSafely(body.url ?? "");
+
+  if (!result.ok) {
+    // Fail closed: a refusal or failure is an error, never a grade.
+    const status = result.kind === "blocked" ? 400 : 502;
+    return NextResponse.json({ error: result.reason }, { status });
   }
 
-  const targetUrl = validation.url!;
-
-  // Fetch headers with timeout
-  const controller = new AbortController();
-  const timeout = setTimeout(() => controller.abort(), 10000);
-
-  let response: Response;
-  try {
-    response = await fetch(targetUrl, {
-      method: "GET",
-      signal: controller.signal,
-      headers: {
-        "User-Agent": "NestCipher-Scanner/1.0",
-      },
-      redirect: "follow",
-    });
-  } catch (err: unknown) {
-    clearTimeout(timeout);
-    const error = err as Error;
-    if (error.name === "AbortError") {
-      return NextResponse.json(
-        {
-          error:
-            "The website took too long to respond. It may be down or blocking automated requests.",
-        },
-        { status: 502 }
-      );
-    }
-    if (
-      error.message?.includes("getaddrinfo") ||
-      error.message?.includes("ENOTFOUND")
-    ) {
-      return NextResponse.json(
-        {
-          error:
-            "Could not resolve the domain. Please check the URL and try again.",
-        },
-        { status: 502 }
-      );
-    }
-    return NextResponse.json(
-      { error: "Something went wrong. Please try again." },
-      { status: 502 }
-    );
-  } finally {
-    clearTimeout(timeout);
-  }
-
-  // Score headers
-  const responseHeaders = response.headers;
   const headerResults: HeaderResult[] = HEADER_CHECKS.map((check) => {
-    const value = responseHeaders.get(check.name);
+    const value = headerValue(result.headers, check.name);
     const { score, status } = check.evaluate(value);
     return {
       name: check.name,
@@ -325,21 +226,20 @@ export async function POST(request: NextRequest) {
   });
 
   const totalScore = headerResults.reduce((sum, h) => sum + h.score, 0);
-  const maxScore = 100;
 
-  const result: ScanResponse = {
-    url: targetUrl,
+  const payload: ScanResponse = {
+    url: result.finalUrl,
     grade: calculateGrade(totalScore),
     score: totalScore,
-    maxScore,
+    maxScore: 100,
     scannedAt: new Date().toISOString(),
     headers: headerResults,
     serverInfo: {
       ip: null,
-      server: responseHeaders.get("server"),
-      poweredBy: responseHeaders.get("x-powered-by"),
+      server: headerValue(result.headers, "server"),
+      poweredBy: headerValue(result.headers, "x-powered-by"),
     },
   };
 
-  return NextResponse.json(result);
+  return NextResponse.json(payload);
 }
