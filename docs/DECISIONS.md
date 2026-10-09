@@ -68,3 +68,22 @@ Each layer refuses on its own (B.L.A.S.T. "L").
   leaving them unlimited — correct for a free site with a hard budget.
 - `DAILY_LLM_BUDGET=200` (requests/day, UTC-keyed counter) and
   `OPENAI_MODEL=gpt-4o-mini` set in Vercel env for all environments.
+
+## 2026-10-09 — Email Analyzer: server owns the arithmetic; calibration added
+
+Live testing with three real inbox emails found two defects: (1) a genuine
+new-sign-in notification from a matching brand domain scored 72/High — the model
+treated unverifiability and even the absence of URLs as threat signals; (2) the
+model inverted one category's scale ("Sender Legitimacy: 90" meaning *legitimate*,
+labelled "low") and its overall score ignored its own weighted-average definition
+(and surfaced as a float in the UI).
+
+Fixes: calibration rules in the system prompt (unverifiability ≠ attack; routine
+security notifications from matching domains cap at "medium" without concrete
+indicators; high/critical reserved for concrete indicators), and server-side
+arithmetic: category scores are clamped into their own level's band, the overall
+is recomputed with the documented weights, and the final verdict is
+`round(max(model overall, recomputed, pre-pass floor))`. Deliberate bias: upward
+corrections apply, downward never do — a security tool fails toward caution, and
+downward calibration stays the prompt's job, not the maths'. The full
+header-aware fix (SPF/DKIM) belongs to Email X-Ray in Phase 2, not Phase 0.

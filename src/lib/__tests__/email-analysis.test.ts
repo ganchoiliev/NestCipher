@@ -156,6 +156,86 @@ describe("applyPrepassFloor", () => {
   });
 });
 
+describe("server-side arithmetic", () => {
+  const cat = (
+    name: string,
+    score: number,
+    level: ModelAnalysis["categories"][number]["level"]
+  ) => ({ name, score, level, findings: ["f"], explanation: "e" });
+
+  it("clamps a score that contradicts its own level label", async () => {
+    const { reconcileCategoryScore } = await import("../email-analysis");
+    expect(reconcileCategoryScore(90, "low")).toBe(35); // inverted semantics
+    expect(reconcileCategoryScore(5, "high")).toBe(61);
+    expect(reconcileCategoryScore(50, "medium")).toBe(50); // consistent, untouched
+  });
+
+  it("recomputes the overall score with the documented weights", async () => {
+    const { recomputeOverallScore } = await import("../email-analysis");
+    const categories = [
+      cat("Urgency & Pressure", 70, "high"),
+      cat("Sender Legitimacy", 80, "high"),
+      cat("Link & URL Safety", 60, "medium"),
+      cat("Language & Grammar", 15, "safe"), // clamps 15 -> 15 (safe band)
+      cat("Impersonation Signals", 75, "high"),
+      cat("Request Analysis", 85, "high"),
+    ];
+    // 70*.15 + 80*.25 + 60*.25 + 15*.1 + 75*.15 + 85*.1 = 66.75
+    expect(recomputeOverallScore(categories, 0)).toBeCloseTo(66.75, 2);
+  });
+
+  it("falls back to the model overall when no category names match", async () => {
+    const { recomputeOverallScore } = await import("../email-analysis");
+    expect(recomputeOverallScore([cat("Mystery", 99, "critical")], 42)).toBe(42);
+  });
+
+  it("corrects an inverted category without poisoning a clean verdict", () => {
+    // The live case: everything safe, but Sender Legitimacy returned 90
+    // with level "low" (model meant "90% legitimate").
+    const inverted: ModelAnalysis = {
+      ...STEERED_SAFE,
+      overallScore: 15,
+      overallLevel: "safe",
+      categories: [
+        cat("Urgency & Pressure", 5, "safe"),
+        cat("Sender Legitimacy", 90, "low"), // inverted
+        cat("Link & URL Safety", 5, "safe"),
+        cat("Language & Grammar", 10, "safe"),
+        cat("Impersonation Signals", 5, "safe"),
+        cat("Request Analysis", 5, "safe"),
+      ],
+    };
+    const final = applyPrepassFloor(inverted, { flags: [], floorScore: 0 });
+    // Reconciled sender = 35 → weighted 13; max(15, 13) = 15 → stays safe.
+    expect(final.overallScore).toBe(15);
+    expect(final.overallLevel).toBe("safe");
+    // And the displayed category no longer contradicts its label:
+    const sender = final.categories.find((c) => c.name === "Sender Legitimacy")!;
+    expect(sender.score).toBe(35);
+  });
+
+  it("recomputation corrects upward and the result is an integer", () => {
+    // Model understates the overall relative to its own categories.
+    const understated: ModelAnalysis = {
+      ...STEERED_SAFE,
+      overallScore: 10,
+      overallLevel: "safe",
+      categories: [
+        cat("Urgency & Pressure", 70, "high"),
+        cat("Sender Legitimacy", 80, "high"),
+        cat("Link & URL Safety", 60, "medium"),
+        cat("Language & Grammar", 15, "safe"),
+        cat("Impersonation Signals", 75, "high"),
+        cat("Request Analysis", 85, "high"),
+      ],
+    };
+    const final = applyPrepassFloor(understated, { flags: [], floorScore: 0 });
+    expect(final.overallScore).toBe(67); // round(66.75), not the model's 10
+    expect(Number.isInteger(final.overallScore)).toBe(true);
+    expect(final.overallLevel).toBe("high");
+  });
+});
+
 describe("message construction and level bands", () => {
   it("delimits the email as data between the markers", () => {
     const msg = buildUserMessage("hello");
