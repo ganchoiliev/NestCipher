@@ -2,70 +2,20 @@ import { NextRequest, NextResponse } from "next/server";
 import { z } from "zod";
 import { checkBotId } from "botid/server";
 import { checkRouteLimit, spendLlmBudget } from "@/lib/limits";
-import type { EmailAnalysisResponse } from "@/types/email-analyzer";
+import { runEmailPrepass } from "@/lib/email-prepass";
+import {
+  applyPrepassFloor,
+  buildUserMessage,
+  EMAIL_ANALYSIS_RESPONSE_FORMAT,
+  parseModelAnalysis,
+  SYSTEM_PROMPT,
+} from "@/lib/email-analysis";
 
 // Layer order (docs/THREAT-MODEL.md A2/A3): WAF (edge) → schema → durable
-// per-IP limit → bot check → global daily budget → provider. Each layer
-// refuses on its own. Prompt hardening (structured outputs, delimited
-// email, deterministic pre-pass) is the next deliverable.
-
-// ── System Prompt ──
-
-const SYSTEM_PROMPT = `You are an expert email security analyst specializing in phishing detection, social engineering, and email fraud. Analyze the provided email content and return a structured JSON assessment.
-
-Evaluate the email across these 6 categories, scoring each 0-100:
-
-1. Urgency & Pressure: Does the email create artificial urgency? Threats of account closure, deadlines, limited-time offers, fear tactics.
-2. Sender Legitimacy: Does the sender appear legitimate? Check for domain spoofing, display name tricks, free email providers posing as companies, mismatched reply-to addresses.
-3. Link & URL Safety: Are there suspicious links? Look for URL shorteners, misspelled domains, IP-based URLs, links that don't match the claimed sender, hidden redirects.
-4. Language & Grammar: Does the email have unusual grammar, spelling errors, awkward phrasing, or inconsistent tone that suggests it was hastily written or machine-translated?
-5. Impersonation Signals: Is the email trying to impersonate a known brand, authority figure, colleague, or institution? Look for brand name abuse, logo references, fake titles.
-6. Request Analysis: What is the email asking the user to do? Requests for credentials, personal information, money transfers, downloading attachments, or clicking links are high-risk.
-
-For each category provide:
-- A score from 0 (no threat) to 100 (definite threat)
-- A threat level: "safe" (0-15), "low" (16-35), "medium" (36-60), "high" (61-85), "critical" (86-100)
-- 2-4 specific findings
-- A brief explanation of why this matters
-
-Also identify specific suspicious elements (links, sender details, attachments, language patterns, impersonation attempts).
-
-Calculate an overall threat score (0-100) as a weighted average:
-- Urgency & Pressure: 15%
-- Sender Legitimacy: 25%
-- Link & URL Safety: 25%
-- Language & Grammar: 10%
-- Impersonation Signals: 15%
-- Request Analysis: 10%
-
-Respond ONLY with valid JSON matching this exact structure (no markdown, no backticks, no explanation outside the JSON):
-{
-  "overallScore": <number 0-100>,
-  "overallLevel": "<safe|low|medium|high|critical>",
-  "verdict": "<one sentence summary>",
-  "categories": [
-    {
-      "name": "<category name>",
-      "score": <number 0-100>,
-      "level": "<safe|low|medium|high|critical>",
-      "findings": ["<finding 1>", "<finding 2>"],
-      "explanation": "<why this matters>"
-    }
-  ],
-  "suspiciousElements": [
-    {
-      "type": "<link|sender|attachment|language|impersonation|other>",
-      "value": "<the suspicious element>",
-      "reason": "<why it's suspicious>"
-    }
-  ],
-  "recommendations": ["<action 1>", "<action 2>", "<action 3>"],
-  "summary": "<2-3 sentence analysis summary>"
-}
-
-If the email appears completely legitimate, still return the full JSON structure with low scores and positive findings. Never refuse to analyze — even safe emails should get a full breakdown showing why they're safe.`;
-
-// ── Input schema ──
+// per-IP limit → bot check → global daily budget → provider. The
+// deterministic pre-pass floors the verdict; the model cannot lower it.
+// Refusals, truncation and unparseable replies are inconclusive (502),
+// never "safe".
 
 const BodySchema = z.object({
   emailContent: z
@@ -75,7 +25,10 @@ const BodySchema = z.object({
     .max(15000, "Email content is too long. Please limit to 15,000 characters."),
 });
 
-// ── Route Handler ──
+const INCONCLUSIVE = {
+  error:
+    "Analysis could not be completed reliably. Treat the email with caution and try again.",
+};
 
 export async function POST(request: NextRequest) {
   const apiKey = process.env.OPENAI_API_KEY;
@@ -120,7 +73,10 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ error: budget.error }, { status: budget.status });
   }
 
-  // Call OpenAI
+  // Deterministic pre-pass: flags and verdict floor the model cannot lower.
+  const prepass = runEmailPrepass(content);
+
+  // Call OpenAI with structured outputs (strict JSON schema).
   let aiResponse: Response;
   try {
     aiResponse = await fetch("https://api.openai.com/v1/chat/completions", {
@@ -133,67 +89,39 @@ export async function POST(request: NextRequest) {
         model,
         temperature: 0.3,
         max_tokens: 2000,
+        response_format: EMAIL_ANALYSIS_RESPONSE_FORMAT,
         messages: [
           { role: "system", content: SYSTEM_PROMPT },
-          { role: "user", content },
+          { role: "user", content: buildUserMessage(content) },
         ],
       }),
     });
   } catch {
-    return NextResponse.json(
-      { error: "Analysis failed. Please try again." },
-      { status: 502 }
-    );
+    return NextResponse.json(INCONCLUSIVE, { status: 502 });
   }
 
   if (!aiResponse.ok) {
-    return NextResponse.json(
-      { error: "Analysis failed. Please try again." },
-      { status: 502 }
-    );
+    return NextResponse.json(INCONCLUSIVE, { status: 502 });
   }
 
-  // Parse OpenAI response
-  let analysisJson: string;
+  let modelText: string;
   try {
     const data = await aiResponse.json();
-    analysisJson = data.choices?.[0]?.message?.content ?? "";
-  } catch {
-    return NextResponse.json(
-      { error: "Analysis failed. Please try again." },
-      { status: 502 }
-    );
-  }
-
-  // Strip markdown backticks if present
-  analysisJson = analysisJson
-    .replace(/^```json\s*/i, "")
-    .replace(/^```\s*/i, "")
-    .replace(/\s*```$/i, "")
-    .trim();
-
-  // Parse and validate
-  let analysis: EmailAnalysisResponse;
-  try {
-    const parsedAnalysis = JSON.parse(analysisJson);
-    if (
-      typeof parsedAnalysis.overallScore !== "number" ||
-      !parsedAnalysis.overallLevel ||
-      !parsedAnalysis.verdict ||
-      !Array.isArray(parsedAnalysis.categories)
-    ) {
-      throw new Error("Invalid response structure");
+    const choice = data.choices?.[0];
+    // A refusal or a truncated reply is inconclusive, never "safe".
+    if (!choice || choice.message?.refusal || choice.finish_reason !== "stop") {
+      return NextResponse.json(INCONCLUSIVE, { status: 502 });
     }
-    analysis = {
-      ...parsedAnalysis,
-      analysedAt: new Date().toISOString(),
-    };
+    modelText = choice.message?.content ?? "";
   } catch {
-    return NextResponse.json(
-      { error: "Analysis failed. Please try again." },
-      { status: 502 }
-    );
+    return NextResponse.json(INCONCLUSIVE, { status: 502 });
   }
 
-  return NextResponse.json(analysis);
+  const analysis = parseModelAnalysis(modelText);
+  if (analysis === null) {
+    return NextResponse.json(INCONCLUSIVE, { status: 502 });
+  }
+
+  const final = applyPrepassFloor(analysis, prepass);
+  return NextResponse.json({ ...final, analysedAt: new Date().toISOString() });
 }
