@@ -1,7 +1,11 @@
 import { NextRequest, NextResponse } from "next/server";
-import { checkRateLimit } from "@/lib/rate-limiter";
+import { z } from "zod";
+import { checkBotId } from "botid/server";
+import { checkRouteLimit } from "@/lib/limits";
 
-const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+const BodySchema = z.object({
+  email: z.email("Please enter a valid email address.").max(254),
+});
 
 export async function POST(request: NextRequest) {
   const apiKey = process.env.RESEND_API_KEY;
@@ -14,33 +18,32 @@ export async function POST(request: NextRequest) {
     );
   }
 
-  let body: { email?: string };
+  let raw: unknown;
   try {
-    body = await request.json();
+    raw = await request.json();
   } catch {
     return NextResponse.json({ error: "Invalid request body." }, { status: 400 });
   }
 
-  const email = body.email?.trim().toLowerCase() ?? "";
-
-  if (!email || !EMAIL_RE.test(email)) {
+  const parsed = BodySchema.safeParse(raw);
+  if (!parsed.success) {
     return NextResponse.json(
       { error: "Please enter a valid email address." },
       { status: 400 }
     );
   }
+  const email = parsed.data.email.trim().toLowerCase();
 
-  const ip =
-    request.headers.get("x-forwarded-for")?.split(",")[0]?.trim() ||
-    request.headers.get("x-real-ip") ||
-    "unknown";
+  // Durable per-IP limit (Upstash), platform-trusted IP.
+  const limit = await checkRouteLimit("subscribe", request);
+  if (!limit.ok) {
+    return NextResponse.json({ error: limit.error }, { status: limit.status });
+  }
 
-  const { allowed } = checkRateLimit(`subscribe:${ip}`, 3, 60 * 60 * 1000);
-  if (!allowed) {
-    return NextResponse.json(
-      { error: "Too many requests. Please try again later." },
-      { status: 429 }
-    );
+  // Bot check: this route writes to the audience list.
+  const verification = await checkBotId();
+  if (verification.isBot) {
+    return NextResponse.json({ error: "Automated traffic detected." }, { status: 403 });
   }
 
   try {

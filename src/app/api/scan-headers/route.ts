@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { fetchHeadersSafely } from "@/lib/safe-fetch";
+import { checkRouteLimit } from "@/lib/limits";
 import type {
   ScanResponse,
   HeaderResult,
@@ -200,6 +201,12 @@ export async function POST(request: NextRequest) {
     body = await request.json();
   } catch {
     return NextResponse.json({ error: "Invalid JSON body." }, { status: 400 });
+  }
+
+  // Durable per-IP limit (Upstash), platform-trusted IP.
+  const limit = await checkRouteLimit("scan-headers", request);
+  if (!limit.ok) {
+    return NextResponse.json({ error: limit.error }, { status: limit.status });
   }
 
   const result = await fetchHeadersSafely(body.url ?? "");

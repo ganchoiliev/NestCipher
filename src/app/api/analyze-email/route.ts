@@ -1,6 +1,13 @@
 import { NextRequest, NextResponse } from "next/server";
-import { checkRateLimit } from "@/lib/rate-limiter";
+import { z } from "zod";
+import { checkBotId } from "botid/server";
+import { checkRouteLimit, spendLlmBudget } from "@/lib/limits";
 import type { EmailAnalysisResponse } from "@/types/email-analyzer";
+
+// Layer order (docs/THREAT-MODEL.md A2/A3): WAF (edge) → schema → durable
+// per-IP limit → bot check → global daily budget → provider. Each layer
+// refuses on its own. Prompt hardening (structured outputs, delimited
+// email, deterministic pre-pass) is the next deliverable.
 
 // ── System Prompt ──
 
@@ -58,61 +65,59 @@ Respond ONLY with valid JSON matching this exact structure (no markdown, no back
 
 If the email appears completely legitimate, still return the full JSON structure with low scores and positive findings. Never refuse to analyze — even safe emails should get a full breakdown showing why they're safe.`;
 
+// ── Input schema ──
+
+const BodySchema = z.object({
+  emailContent: z
+    .string()
+    .trim()
+    .min(10, "Please paste a longer email — at least 10 characters are needed for analysis.")
+    .max(15000, "Email content is too long. Please limit to 15,000 characters."),
+});
+
 // ── Route Handler ──
 
 export async function POST(request: NextRequest) {
-  // Check API key
   const apiKey = process.env.OPENAI_API_KEY;
-  if (!apiKey) {
+  const model = process.env.OPENAI_MODEL;
+  if (!apiKey || !model) {
     return NextResponse.json(
       { error: "Email analysis is temporarily unavailable." },
-      { status: 500 }
+      { status: 503 }
     );
   }
 
-  // Parse body
-  let body: { emailContent?: string };
+  let raw: unknown;
   try {
-    body = await request.json();
+    raw = await request.json();
   } catch {
-    return NextResponse.json(
-      { error: "Invalid JSON body." },
-      { status: 400 }
-    );
+    return NextResponse.json({ error: "Invalid JSON body." }, { status: 400 });
   }
 
-  // Validate input
-  const content = body.emailContent?.trim() ?? "";
-  if (!content) {
-    return NextResponse.json(
-      { error: "Please paste an email to analyze." },
-      { status: 400 }
-    );
+  const parsed = BodySchema.safeParse(raw);
+  if (!parsed.success) {
+    const message =
+      parsed.error.issues[0]?.message ?? "Please paste an email to analyze.";
+    return NextResponse.json({ error: message }, { status: 400 });
   }
-  if (content.length < 10) {
-    return NextResponse.json(
-      { error: "Please paste a longer email — at least 10 characters are needed for analysis." },
-      { status: 400 }
-    );
-  }
-  if (content.length > 15000) {
-    return NextResponse.json(
-      { error: "Email content is too long. Please limit to 15,000 characters." },
-      { status: 400 }
-    );
+  const content = parsed.data.emailContent;
+
+  // Durable per-IP limit (Upstash), platform-trusted IP.
+  const limit = await checkRouteLimit("analyze-email", request);
+  if (!limit.ok) {
+    return NextResponse.json({ error: limit.error }, { status: limit.status });
   }
 
-  // Rate limit
-  const ip =
-    request.headers.get("x-forwarded-for")?.split(",")[0]?.trim() ||
-    request.headers.get("x-real-ip") ||
-    "unknown";
-  const { allowed } = checkRateLimit(ip, 5, 60 * 60 * 1000);
-  if (!allowed) {
-    return NextResponse.json(
-      { error: "Rate limit reached. You can analyze 5 emails per hour. Please try again later." },
-      { status: 429 }
-    );
+  // Bot check: this route costs money per call.
+  const verification = await checkBotId();
+  if (verification.isBot) {
+    return NextResponse.json({ error: "Automated traffic detected." }, { status: 403 });
+  }
+
+  // Global daily budget: the hard ceiling on paid LLM calls.
+  const budget = await spendLlmBudget();
+  if (!budget.ok) {
+    return NextResponse.json({ error: budget.error }, { status: budget.status });
   }
 
   // Call OpenAI
@@ -125,7 +130,7 @@ export async function POST(request: NextRequest) {
         Authorization: `Bearer ${apiKey}`,
       },
       body: JSON.stringify({
-        model: "gpt-4o-mini",
+        model,
         temperature: 0.3,
         max_tokens: 2000,
         messages: [
@@ -170,17 +175,17 @@ export async function POST(request: NextRequest) {
   // Parse and validate
   let analysis: EmailAnalysisResponse;
   try {
-    const parsed = JSON.parse(analysisJson);
+    const parsedAnalysis = JSON.parse(analysisJson);
     if (
-      typeof parsed.overallScore !== "number" ||
-      !parsed.overallLevel ||
-      !parsed.verdict ||
-      !Array.isArray(parsed.categories)
+      typeof parsedAnalysis.overallScore !== "number" ||
+      !parsedAnalysis.overallLevel ||
+      !parsedAnalysis.verdict ||
+      !Array.isArray(parsedAnalysis.categories)
     ) {
       throw new Error("Invalid response structure");
     }
     analysis = {
-      ...parsed,
+      ...parsedAnalysis,
       analysedAt: new Date().toISOString(),
     };
   } catch {
