@@ -4,7 +4,7 @@ import { EmailAnalyzer } from "@/components/tools/EmailAnalyzer";
 export const metadata: Metadata = {
   title: "AI Email Analyzer — Phishing Detection — Nest Cipher",
   description:
-    "Paste a suspicious email and get an AI-powered threat analysis in seconds. Free, no sign-up required.",
+    "Paste a suspicious email and get an AI-powered threat analysis in seconds. Free and open source.",
   openGraph: {
     title: "AI Email Analyzer — Nest Cipher",
     description:

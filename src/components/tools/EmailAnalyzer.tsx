@@ -269,7 +269,7 @@ export function EmailAnalyzer() {
         social engineering tactics, and other threats.
       </p>
       <p className="mt-2 text-xs text-text-muted">
-        Your email content is analyzed securely and never stored.
+        Sent to OpenAI for analysis. NestCipher stores nothing.
       </p>
 
       {/* Input */}
@@ -286,7 +286,16 @@ export function EmailAnalyzer() {
         />
         <div className="flex items-center justify-between mt-2 mb-4">
           <p className="text-xs text-text-muted">
-            Privacy: Your email is sent to our secure API for analysis and is never stored, logged, or shared.
+            Sent to OpenAI for analysis. NestCipher stores nothing.{" "}
+            <a
+              href="https://openai.com/policies/api-data-usage-policies"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="underline hover:text-accent"
+            >
+              OpenAI&apos;s API data policy
+            </a>{" "}
+            applies. See our <a href="/privacy" className="underline hover:text-accent">privacy page</a>.
           </p>
           <span className="text-xs text-text-muted shrink-0 ml-4">
             {emailContent.length.toLocaleString()} / 15,000

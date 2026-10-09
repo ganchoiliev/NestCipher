@@ -130,3 +130,26 @@ header-aware fix (SPF/DKIM) belongs to Email X-Ray in Phase 2, not Phase 0.
   once per machine) or any Chromium via `PW_EXECUTABLE=`. Deliberately NOT in
   the `build` script: Vercel's build image has no browser.
 - `poweredByHeader: false` — the scanner's own advice, applied to ourselves.
+
+## 2026-10-09 — Honesty, privacy and open-source hygiene (deliverables 8–9)
+
+- Every tool now states its true data flow: Email Analyzer "Sent to OpenAI…
+  NestCipher stores nothing" with the OpenAI API data policy linked; Headers
+  Scanner "fetched once from NestCipher's server"; OWASP explorer "runs in
+  your browser". The false "never stored, logged, or shared" lines are gone.
+- Site retitled "NestCipher — Free, Open-Source AI Security Tools"; "No
+  sign-ups" and "AI-Powered" removed from metadata and the hero. "AI security
+  tools" means tools FOR AI security — that phrasing is deliberate.
+- /privacy: controller GoSmartR Ltd (company 15407332, registered office as
+  published on gosmartr.co.uk), the five processors and what each receives,
+  retention, UK GDPR rights, ICO reference. Linked from footer, newsletter
+  and the analyzer.
+- Newsletter promise corrected to "Release notes, a few times a year".
+- Subscribe call moved to Resend's CURRENT API (POST /contacts — the
+  /audiences/{id}/contacts path is gone from their docs; checked 2026-10-09).
+  RESEND_AUDIENCE_ID is no longer read and can be deleted from Vercel env.
+  Needs one live form submission after deploy to confirm against his account.
+- LICENSE (MIT), README (what/run/security model), SECURITY.md (scope,
+  out-of-scope incl. volumetric DoS and cost exhaustion, safe harbour,
+  honest solo-operator response times), RFC 9116 security.txt (expires
+  2027-10-09), /security/thanks Hall of Fame stub.

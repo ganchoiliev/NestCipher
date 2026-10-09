@@ -56,6 +56,9 @@ export function OwaspExplorer() {
             Click any vulnerability to explore.
           </p>
           <p className="mt-2 text-xs text-text-muted">
+            Runs in your browser. Nothing you do here leaves this page.
+          </p>
+          <p className="mt-2 text-xs text-text-muted">
             Based on{" "}
             <a
               href="https://genai.owasp.org/llm-top-10/"

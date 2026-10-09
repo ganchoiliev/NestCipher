@@ -346,6 +346,9 @@ export function HeadersScanner() {
       <p className="mt-4 text-text-secondary max-w-2xl">
         Check any website&apos;s HTTP security headers and get actionable recommendations.
       </p>
+      <p className="mt-2 text-xs text-text-muted">
+        The URL you enter is fetched once from NestCipher&apos;s server. Nothing is stored.
+      </p>
 
       {/* Input */}
       <form onSubmit={handleScan} className="mt-8 flex flex-col sm:flex-row gap-3">

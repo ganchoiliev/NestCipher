@@ -9,9 +9,8 @@ const BodySchema = z.object({
 
 export async function POST(request: NextRequest) {
   const apiKey = process.env.RESEND_API_KEY;
-  const audienceId = process.env.RESEND_AUDIENCE_ID;
 
-  if (!apiKey || !audienceId) {
+  if (!apiKey) {
     return NextResponse.json(
       { error: "Newsletter service temporarily unavailable." },
       { status: 503 }
@@ -47,17 +46,17 @@ export async function POST(request: NextRequest) {
   }
 
   try {
-    const res = await fetch(
-      `https://api.resend.com/audiences/${audienceId}/contacts`,
-      {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          Authorization: `Bearer ${apiKey}`,
-        },
-        body: JSON.stringify({ email }),
-      }
-    );
+    // Resend's current API creates contacts at POST /contacts (the legacy
+    // /audiences/{id}/contacts path is gone from the docs). Checked against
+    // resend.com/docs/api-reference/contacts/create-contact on 2026-10-09.
+    const res = await fetch("https://api.resend.com/contacts", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: `Bearer ${apiKey}`,
+      },
+      body: JSON.stringify({ email, unsubscribed: false }),
+    });
 
     if (!res.ok) {
       const errText = await res.text();

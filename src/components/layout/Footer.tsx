@@ -46,6 +46,9 @@ export function Footer() {
                 GoSmartR
               </a>
             </span>
+            <a href="/privacy" className="text-text-muted text-xs hover:text-accent transition-colors">
+              Privacy
+            </a>
             <a href="mailto:hello@nestcipher.com" className="text-text-muted text-xs hover:text-accent transition-colors">
               hello@nestcipher.com
             </a>

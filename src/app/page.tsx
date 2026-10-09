@@ -36,8 +36,8 @@ export default function Home() {
         <HeroCanvas />
         <div className="relative z-10 mx-auto max-w-4xl px-4 text-center">
           <h1 className="rise-in font-mono text-4xl font-bold leading-tight sm:text-5xl lg:text-6xl">
-            Free AI-Powered{" "}
-            <span className="text-accent">Security Tools</span>
+            Free, Open-Source{" "}
+            <span className="text-accent">AI Security Tools</span>
           </h1>
           <p
             className="rise-in mt-6 text-lg text-text-secondary sm:text-xl"
@@ -89,7 +89,14 @@ export default function Home() {
         <div className="rise-in rounded-2xl border border-border-subtle bg-bg-card p-8 sm:p-12 text-center">
           <h2 className="font-mono text-2xl font-bold sm:text-3xl">Stay sharp.</h2>
           <p className="mt-4 text-text-secondary">
-            Weekly AI security insights. No spam. Unsubscribe anytime.
+            Release notes, a few times a year. Unsubscribe anytime.
+          </p>
+          <p className="mt-2 text-xs text-text-muted">
+            Your address goes to Resend to send you the emails — see the{" "}
+            <Link href="/privacy" className="underline hover:text-accent">
+              privacy page
+            </Link>
+            .
           </p>
           <div className="relative mt-8">
             <NewsletterForm />

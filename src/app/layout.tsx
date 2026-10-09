@@ -19,13 +19,13 @@ const geistMono = Geist_Mono({
 
 export const metadata: Metadata = {
   metadataBase: new URL("https://nestcipher.com"),
-  title: "Nest Cipher — Free AI-Powered Security Tools",
+  title: "NestCipher — Free, Open-Source AI Security Tools",
   description:
-    "Free security toolkit for developers. Scan headers, detect phishing, and explore the OWASP LLM Top 10. No sign-ups, no ads, no cookies.",
+    "Free, open-source security tools for developers: scan security headers, analyse phishing emails, and explore the OWASP LLM Top 10.",
   openGraph: {
-    title: "Nest Cipher — Free AI-Powered Security Tools",
+    title: "NestCipher — Free, Open-Source AI Security Tools",
     description:
-      "Free security toolkit for developers. Scan headers, detect phishing, and explore the OWASP LLM Top 10. No sign-ups, no ads, no cookies.",
+      "Free, open-source security tools for developers: scan security headers, analyse phishing emails, and explore the OWASP LLM Top 10.",
     url: "https://nestcipher.com",
     siteName: "Nest Cipher",
     type: "website",
@@ -33,9 +33,9 @@ export const metadata: Metadata = {
   },
   twitter: {
     card: "summary_large_image",
-    title: "Nest Cipher — Free AI-Powered Security Tools",
+    title: "NestCipher — Free, Open-Source AI Security Tools",
     description:
-      "Free security toolkit for developers. Scan headers, detect phishing, and explore the OWASP LLM Top 10.",
+      "Free, open-source security tools: scan headers, analyse phishing emails, explore the OWASP LLM Top 10.",
     images: ["/opengraph-image"],
   },
   icons: {
@@ -75,9 +75,9 @@ export default async function RootLayout({
             __html: JSON.stringify({
               "@context": "https://schema.org",
               "@type": "WebApplication",
-              name: "Nest Cipher",
+              name: "NestCipher",
               url: "https://nestcipher.com",
-              description: "Free AI-powered security toolkit for developers and security professionals.",
+              description: "Free, open-source AI security tools for developers and security professionals.",
               applicationCategory: "SecurityApplication",
               operatingSystem: "Web",
               offers: { "@type": "Offer", price: "0", priceCurrency: "GBP" },

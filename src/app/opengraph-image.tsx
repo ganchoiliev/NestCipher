@@ -1,7 +1,7 @@
 import { ImageResponse } from "next/og";
 
 export const runtime = "edge";
-export const alt = "Nest Cipher — Free AI-Powered Security Tools";
+export const alt = "NestCipher — Free, Open-Source AI Security Tools";
 export const size = { width: 1200, height: 630 };
 export const contentType = "image/png";
 
@@ -35,7 +35,7 @@ export default function OGImage() {
             marginTop: 20,
           }}
         >
-          Free AI-Powered Security Tools
+          Free, Open-Source AI Security Tools
         </div>
         <div
           style={{

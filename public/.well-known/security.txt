@@ -1,0 +1,6 @@
+Contact: mailto:hello@nestcipher.com
+Expires: 2027-10-09T00:00:00.000Z
+Policy: https://github.com/ganchoiliev/NestCipher/blob/master/SECURITY.md
+Acknowledgments: https://nestcipher.com/security/thanks
+Preferred-Languages: en
+Canonical: https://nestcipher.com/.well-known/security.txt
