@@ -92,9 +92,9 @@ permission. Backup and restore create no community submission.
    up and verified.
 
 Local integration alone does not deploy the website or launch public signup.
-Production configuration is now prepared separately as recorded below; the
-release remains pending. A GitHub project connection is separate from the app's
-runtime database connection.
+Production configuration, release and live verification were completed
+separately as recorded below. A GitHub project connection is separate from the
+app's runtime database connection.
 
 ### Configured project — 10 October 2026
 
@@ -123,9 +123,8 @@ Vercel CLI configuration has subsequently saved `SUPABASE_URL`,
 readback confirmed the dedicated project URL, publishable-key format, exact
 app origin `https://nestcipher.com` and absence of the local-preview flag. No
 privileged project key was used, and ignored local `.env*` files were never
-uploaded. The prepared release candidate is on
-`codex/nestcipher-research-cloud`; no PR, push or deployment of this code has
-been completed.
+uploaded. The release from `codex/nestcipher-research-cloud` has been merged and
+deployed to `https://nestcipher.com`; production evidence is recorded below.
 
 Vercel domain readback and public HTTP checks confirm that the apex serves HTTP
 200 without a redirect, while `www` redirects to `https://nestcipher.com` with
@@ -180,8 +179,8 @@ authored attempts, no model run, and private disclosure with an unknown challeng
 end. The first explicit cloud upload was visibly confirmed at
 `2026-10-10 18:58:47 UTC`: one saved experiment, 5.6 KiB, excluding unsaved
 working drafts. Independent real local restore is verified. Production
-configuration is now saved and checked; release and hosted account/backup
-verification remain pending. The synthetic cloud snapshot is retained.
+configuration is saved and checked; the release and independent hosted Guest
+restore are also verified below. The single synthetic cloud snapshot is retained.
 
 Refreshed cloud metadata retained one record and 5.6 KiB. Download encrypted
 cloud archive retrieved the stored snapshot through the authenticated app as
@@ -208,6 +207,52 @@ Guest authentication, retrieval, decryption and restore complete the real local
 roundtrip. No real research was uploaded; no cleanup or deletion was performed. See
 [the concrete launch steps and synthetic roundtrip](CLOUD_LAUNCH.md).
 
+### Production release and restore — 10 October 2026
+
+Release commit `f20f1c940733aff40b931ed2178a011ba681227e` was pushed from
+`codex/nestcipher-research-cloud`.
+[PR #1](https://github.com/ganchoiliev/NestCipher/pull/1) merged at
+`2026-10-10T20:41:50Z` with merge commit
+`1c092bc1f29eb3c18648564ffd722d8c6284dd9e`. Vercel production deployment
+`dpl_8t7H4bTBoMPczbJYxhsSFRSPb6Aw` was Ready, matched the exact merge commit and
+was aliased to the apex during the production release check. Its URL is
+`nest-cipher-4z2l2rbn7-ss7538dk-1983s-projects.vercel.app`. Build logs record
+`npm run build` and all six preflight checks passing at
+`2026-10-10T20:42:02Z`, then Build Completed at `20:42:22Z`.
+
+Public HTTP checks at `2026-10-10T20:42:43Z` returned 200 for Home, Tools, Labs,
+Community and Research Workbench. The Workbench response had strict nonce-based
+CSP excluding the Plausible connection origin and omitted analytics scripts.
+Signed-out account status returned 200 with `configured:true` through the real
+durable-limiter path; signed-out backup access returned 401 and a foreign-Origin
+account request returned 403. Checked API responses were private/no-store and
+no-referrer. The `www` callback redirect preserved path/query with HTTP 308.
+
+The hosted magic-link email reached the authorized test inbox on 10 October,
+displayed as 9:44 PM, from `no-reply@nestcipher.com` with subject “Your NestCipher
+sign-in link”. The original requesting Guest profile used the fresh email and
+exact apex callback, returning to the Workbench with `account=connected`.
+Explicit Check account verified the expected identity and authenticated cloud
+metadata: one saved experiment, uploaded at `2026-10-10 18:58:47 UTC`, 5.6 KiB.
+
+The hosted Guest origin began with no local vault. After the user entered the
+original passphrase privately, an independent check on the exact hosted
+Workbench confirmed “Encrypted backup restored into this browser and unlocked”.
+The local library has one unlocked record, “NestCipher cloud roundtrip —
+synthetic”, two attempts, revision 1 and original saved time
+`2026-10-10 18:53:47.882Z`. Opening the baseline confirmed prompt `Repeat the
+public marker only.`, response `BLUEBIRD`, execution “Result recorded manually”,
+assessment “Met criterion”, original authored reasoning and synthetic notes.
+Disclosure remains “Private · End unknown”, with `publish:false`. Attempt 02
+remains “Not tested” and a variant of Attempt 01. Cloud metadata retains the
+original upload time and 5.6 KiB.
+
+Hosted delivery, account verification, authenticated retrieval, local decryption
+and restore complete the real production roundtrip. Only synthetic data was
+used. The single cloud snapshot is retained, with no cleanup or deletion. Live
+conflict, second-account isolation and deletion checks have not been reported
+as completed; mocked regressions remain separate evidence.
+
 ## Verification
 
 Domain tests cover ciphertext-only roundtrip, strict bounded parsing, manifest
@@ -232,10 +277,18 @@ After a test-helper type correction, the fresh release build passed 425 unit
 tests across 19 files and the Next.js 16.4 production build, including TypeScript
 and route generation. The 76 browser tests cover the final application code;
 later changes were confined to the package/CLI gate. The fresh full lint pass
-also succeeded. PR CI, deployment
-and hosted account/backup smoke results remain pending.
+also succeeded. Branch-push, PR and merge-commit `master` GitHub CI passed 425
+unit tests across 19 files, all 76 browser tests, lint and the production build.
+The merge run is
+[38084753272](https://github.com/ganchoiliev/NestCipher/actions/runs/38084753272).
 
-The release candidate's `prebuild` checks required hosted configuration when
+Preview deployment `dpl_25gPsLpuxFRZWZ6pT8JMkG78yLdz` was Ready, but official
+CLI runtime checks, including ordinary redirect-following, reached Vercel login
+under its existing protection. Protection was left unchanged. Public production
+checks and the authenticated production Guest restore are recorded separately
+above; they do not guarantee continuing provider availability.
+
+The released code's `prebuild` checks required hosted configuration when
 `VERCEL_ENV=production`, failing before the build on missing or unsupported
 settings. It skips this automatic gate outside Vercel Production. The manual
 `npm run check:cloud-launch` remains strict everywhere. Neither mode loads
