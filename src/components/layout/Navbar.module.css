@@ -1,0 +1,171 @@
+.header {
+  position: sticky;
+  top: 0;
+  z-index: 50;
+  background: var(--bg-primary);
+  border-bottom: 1px solid var(--border-subtle);
+}
+.nav {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  height: 84px;
+  gap: 28px;
+}
+.brand {
+  display: inline-flex;
+  align-items: center;
+  min-height: 44px;
+  gap: 12px;
+  font:
+    700 36px/1 var(--font-barlow-condensed),
+    sans-serif;
+  letter-spacing: -0.03em;
+  text-transform: uppercase;
+}
+.brandLight {
+  font-weight: 700;
+}
+.brandDot {
+  color: var(--accent);
+  margin-left: 3px;
+}
+.mark {
+  color: var(--accent);
+  flex-shrink: 0;
+}
+.desktopLinks {
+  display: flex;
+  gap: 28px;
+  margin-left: auto;
+}
+.navLink {
+  display: inline-flex;
+  align-items: center;
+  min-height: 84px;
+  padding-inline: 6px;
+  font-size: 16px;
+  color: var(--text-secondary);
+  position: relative;
+}
+.navLink:hover,
+.navLink[aria-current] {
+  color: var(--text-primary);
+}
+.navLink[aria-current]::after {
+  content: "";
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  height: 2px;
+  background: var(--accent);
+}
+.actions {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+}
+.openLabel {
+  font:
+    12px/1.5 var(--font-dm-mono),
+    monospace;
+  color: var(--text-muted);
+  border-left: 1px solid var(--border-subtle);
+  padding-left: 28px;
+}
+.iconButton {
+  display: inline-flex;
+  flex-shrink: 0;
+  align-items: center;
+  justify-content: center;
+  width: 44px;
+  height: 44px;
+  border: 1px solid var(--border-hover);
+  color: var(--text-secondary);
+}
+.iconButton:hover {
+  color: var(--accent);
+  border-color: var(--accent);
+}
+.menuButton {
+  display: none;
+}
+.mobileNav {
+  padding: 12px 20px 28px;
+  border-top: 1px solid var(--border-subtle);
+}
+.mobileNav a {
+  display: flex;
+  align-items: center;
+  gap: 24px;
+  padding-block: 18px;
+  border-bottom: 1px solid var(--border-subtle);
+  font-size: 22px;
+}
+.mobileNav a span {
+  font:
+    12px/1.5 var(--font-dm-mono),
+    monospace;
+  color: var(--text-muted);
+}
+.mobileNav p {
+  margin-top: 24px;
+  font-size: 14px;
+  color: var(--text-muted);
+}
+.noScriptNav {
+  display: none;
+  flex-wrap: wrap;
+  gap: 24px;
+  padding: 8px 20px;
+  font-size: 16px;
+  border-top: 1px solid var(--border-subtle);
+}
+.noScriptNav a {
+  display: inline-flex;
+  align-items: center;
+  min-height: 44px;
+  min-width: 44px;
+}
+@media (max-width: 1050px) {
+  .openLabel {
+    display: none;
+  }
+}
+@media (max-width: 700px) {
+  .nav {
+    height: 72px;
+    gap: 12px;
+  }
+  .brand {
+    font-size: 31px;
+    gap: 10px;
+  }
+  .mark {
+    width: 29px;
+    height: 29px;
+  }
+  .desktopLinks {
+    display: none;
+  }
+  .menuButton {
+    display: flex;
+  }
+  .actions {
+    gap: 8px;
+  }
+  .noScriptNav {
+    display: flex;
+  }
+}
+@media (max-width: 380px) {
+  .brand {
+    font-size: 27px;
+    gap: 8px;
+  }
+  .mark {
+    width: 28px;
+    height: 28px;
+  }
+}

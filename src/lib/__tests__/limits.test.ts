@@ -34,6 +34,22 @@ describe("decideIpLimit", () => {
     if (!r.ok) expect(r.status).toBe(503);
   });
 
+  it.each([false, true])("fails closed on the SDK's allowed timeout result with dev=%s", async (dev) => {
+    const timedOut: LimiterLike = { limit: async () => ({ success: true, reason: "timeout" }) };
+    expect(await decideIpLimit(timedOut, "1.2.3.4", "5 per hour", dev)).toEqual({
+      ok: false,
+      status: 503,
+      error: "Rate limiting is unavailable right now. Please try again shortly.",
+    });
+  });
+
+  it.each(["cacheBlock", "denyList"] as const)("keeps a %s SDK rejection blocked with 429", async (reason) => {
+    const rejected: LimiterLike = { limit: async () => ({ success: false, reason }) };
+    const result = await decideIpLimit(rejected, "1.2.3.4", "5 per hour", false);
+    expect(result.ok).toBe(false);
+    if (!result.ok) expect(result.status).toBe(429);
+  });
+
   it("fails closed with 503 when no limiter is configured in production", async () => {
     const r = await decideIpLimit(null, "1.2.3.4", "5 per hour", false);
     expect(r.ok).toBe(false);

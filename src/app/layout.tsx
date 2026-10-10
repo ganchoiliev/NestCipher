@@ -1,19 +1,29 @@
 import type { Metadata } from "next";
 import { headers } from "next/headers";
-import { Geist, Geist_Mono } from "next/font/google";
+import { Barlow, Barlow_Condensed, DM_Mono } from "next/font/google";
 import Script from "next/script";
 import { ThemeProvider } from "@/components/layout/ThemeProvider";
 import { Navbar } from "@/components/layout/Navbar";
 import { Footer } from "@/components/layout/Footer";
+import { ToolDraftProvider } from "@/components/layout/ToolDraftProvider";
+import { WORKBENCH_REQUEST_HEADER } from "@/lib/csp";
 import "./globals.css";
 
-const geistSans = Geist({
-  variable: "--font-geist-sans",
+const barlow = Barlow({
+  weight: ["400", "500", "600"],
+  variable: "--font-barlow",
   subsets: ["latin"],
 });
 
-const geistMono = Geist_Mono({
-  variable: "--font-geist-mono",
+const barlowCondensed = Barlow_Condensed({
+  weight: ["600", "700"],
+  variable: "--font-barlow-condensed",
+  subsets: ["latin"],
+});
+
+const dmMono = DM_Mono({
+  weight: ["400", "500"],
+  variable: "--font-dm-mono",
   subsets: ["latin"],
 });
 
@@ -60,46 +70,62 @@ export default async function RootLayout({
 }: Readonly<{
   children: React.ReactNode;
 }>) {
-  const nonce = (await headers()).get("x-nonce") ?? undefined;
+  const requestHeaders = await headers();
+  const nonce = requestHeaders.get("x-nonce") ?? undefined;
+  const isWorkbench = requestHeaders.get(WORKBENCH_REQUEST_HEADER) === "1";
   return (
     <html
       lang="en"
-      className={`${geistSans.variable} ${geistMono.variable} h-full antialiased`}
+      className={`${barlow.variable} ${barlowCondensed.variable} ${dmMono.variable} dark h-full antialiased`}
       suppressHydrationWarning
     >
       <head>
         <script
           type="application/ld+json"
           nonce={nonce}
+          // Browsers hide the nonce attribute after parsing; the nonce property remains intact.
+          suppressHydrationWarning
           dangerouslySetInnerHTML={{
             __html: JSON.stringify({
               "@context": "https://schema.org",
               "@type": "WebApplication",
               name: "NestCipher",
               url: "https://nestcipher.com",
-              description: "Free, open-source AI security tools for developers and security professionals.",
+              description:
+                "Free, open-source AI security tools for developers and security professionals.",
               applicationCategory: "SecurityApplication",
               operatingSystem: "Web",
               offers: { "@type": "Offer", price: "0", priceCurrency: "GBP" },
-              author: { "@type": "Organization", name: "GoSmartR", url: "https://gosmartr.co.uk" },
+              author: {
+                "@type": "Organization",
+                name: "GoSmartR",
+                url: "https://gosmartr.co.uk",
+              },
             }),
           }}
         />
-        <Script
-          src="https://plausible.io/js/pa-FOyFgrwIcEk2zlKADZTcX.js"
-          strategy="afterInteractive"
-          nonce={nonce}
-        />
-        <Script id="plausible-init" strategy="afterInteractive" nonce={nonce}>
-          {`window.plausible=window.plausible||function(){(plausible.q=plausible.q||[]).push(arguments)};plausible.init=plausible.init||function(i){plausible.o=i||{}};plausible.init();`}
-        </Script>
+        {!isWorkbench && <>
+          <Script
+            src="https://plausible.io/js/pa-FOyFgrwIcEk2zlKADZTcX.js"
+            strategy="afterInteractive"
+            nonce={nonce}
+          />
+          <Script id="plausible-init" strategy="afterInteractive" nonce={nonce}>
+            {`window.plausible=window.plausible||function(){(plausible.q=plausible.q||[]).push(arguments)};plausible.init=plausible.init||function(i){plausible.o=i||{}};plausible.init();`}
+          </Script>
+        </>}
       </head>
       <body className="min-h-full flex flex-col bg-background text-foreground">
         <ThemeProvider nonce={nonce}>
+          <a href="#main-content" className="skip-link">
+            Skip to content
+          </a>
           <Navbar />
-          <main className="flex-1 pt-16">
-            {children}
-          </main>
+          <ToolDraftProvider>
+            <main id="main-content" className="flex-1" tabIndex={-1}>
+              {children}
+            </main>
+          </ToolDraftProvider>
           <Footer />
         </ThemeProvider>
       </body>

@@ -32,7 +32,6 @@ export function NewsletterForm() {
 
       setSuccess(true);
       setEmail("");
-      setTimeout(() => setSuccess(false), 4000);
     } catch {
       setError("Something went wrong. Please try again.");
     } finally {
@@ -41,33 +40,43 @@ export function NewsletterForm() {
   };
 
   return (
-    <form onSubmit={handleSubmit} className="flex flex-col sm:flex-row gap-3 w-full max-w-md mx-auto">
-      <input
-        type="email"
-        value={email}
-        onChange={(e) => setEmail(e.target.value)}
-        placeholder="you@example.com"
-        required
-        disabled={loading}
-        className="flex-1 rounded-lg border border-border-subtle bg-bg-card px-4 py-3 text-sm text-text-primary
+    <form onSubmit={handleSubmit} className="w-full" aria-busy={loading}>
+      <label
+        htmlFor="newsletter-email"
+        className="mb-3 block text-xs text-text-secondary"
+      >
+        Email address
+      </label>
+      <div className="flex flex-col sm:flex-row gap-3">
+        <input
+          id="newsletter-email"
+          type="email"
+          autoComplete="email"
+          value={email}
+          onChange={(e) => setEmail(e.target.value)}
+          placeholder="you@example.com"
+          required
+          disabled={loading}
+          className="min-w-0 flex-1 border border-border-hover bg-bg-card min-h-[48px] px-4 py-3 text-base text-text-primary
           placeholder:text-text-muted focus:outline-none focus:border-accent focus:ring-1 focus:ring-accent
           transition-colors disabled:opacity-50"
-      />
-      <button
-        type="submit"
-        disabled={loading || !email.trim()}
-        className="rounded-lg bg-accent px-6 py-3 text-sm font-medium text-bg-primary
+        />
+        <button
+          type="submit"
+          disabled={loading || !email.trim()}
+          className="min-h-[48px] bg-accent px-6 py-3 text-base font-medium text-on-accent
           hover:bg-accent-hover transition-colors whitespace-nowrap disabled:opacity-50"
-      >
-        {loading ? "Subscribing..." : "Subscribe"}
-      </button>
+        >
+          {loading ? "Subscribing..." : "Subscribe"}
+        </button>
+      </div>
       {success && (
-        <div className="absolute mt-14 sm:mt-0 sm:ml-2 text-xs text-accent animate-pulse">
+        <div role="status" className="mt-3 text-xs text-success">
           Thanks for subscribing!
         </div>
       )}
       {error && (
-        <div className="absolute mt-14 sm:mt-0 sm:ml-2 text-xs text-[#EF4444]">
+        <div role="alert" className="mt-3 text-xs text-danger">
           {error}
         </div>
       )}

@@ -25,6 +25,13 @@ const ROUTE_LIMITS = {
   "analyze-email": { requests: 5, window: "1 h", friendly: "5 analyses per hour" },
   "scan-headers": { requests: 30, window: "1 h", friendly: "30 scans per hour" },
   subscribe: { requests: 3, window: "1 h", friendly: "3 attempts per hour" },
+  "research-account": { requests: 60, window: "1 h", friendly: "60 account checks per hour" },
+  "research-sign-in": { requests: 5, window: "1 h", friendly: "5 sign-in emails per hour" },
+  "research-sign-out": { requests: 20, window: "1 h", friendly: "20 sign-outs per hour" },
+  "research-auth-callback": { requests: 20, window: "1 h", friendly: "20 sign-in callbacks per hour" },
+  "research-backup-read": { requests: 60, window: "1 h", friendly: "60 backup reads per hour" },
+  "research-backup-write": { requests: 30, window: "1 h", friendly: "30 backup saves per hour" },
+  "research-backup-delete": { requests: 10, window: "1 h", friendly: "10 backup deletions per hour" },
 } as const;
 
 export type LimitedRoute = keyof typeof ROUTE_LIMITS;
@@ -42,7 +49,7 @@ export function getRedis(): Redis | null {
 }
 
 export interface LimiterLike {
-  limit(key: string): Promise<{ success: boolean }>;
+  limit(key: string): Promise<{ success: boolean; reason?: "timeout" | "cacheBlock" | "denyList" }>;
 }
 
 const limiters = new Map<LimitedRoute, LimiterLike | null>();
@@ -89,6 +96,15 @@ export async function decideIpLimit(
   }
   try {
     const res = await limiter.limit(ip);
+    // Upstash resolves its timeout as success:true. An unconfirmed durable
+    // decision must refuse access instead of bypassing the route's limit.
+    if (res.reason === "timeout") {
+      return {
+        ok: false,
+        status: 503,
+        error: "Rate limiting is unavailable right now. Please try again shortly.",
+      };
+    }
     if (res.success) return { ok: true };
     return {
       ok: false,

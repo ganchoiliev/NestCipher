@@ -1,0 +1,34 @@
+.panel { border-top: 1px solid var(--border-hover); padding-top: 24px; margin-top: 28px; }
+.panel * { min-width: 0; }
+.heading { display: flex; justify-content: space-between; align-items: start; gap: 16px; }
+.heading h3 { font: 700 34px/1.1 var(--font-barlow-condensed),sans-serif; text-transform: uppercase; margin-top: 10px; }
+.badge { border: 1px solid var(--border-hover); color: var(--text-secondary); padding: 6px 10px; font: 11px/1.6 var(--font-dm-mono),monospace; white-space: nowrap; }
+.intro, .note { font-size: 16px; line-height: 1.6; color: var(--text-secondary); margin-block: 16px; }
+.actions { display: flex; flex-wrap: wrap; gap: 12px; }
+.textButton { min-height: 48px; min-width: 44px; padding: 10px 14px; color: var(--text-secondary); font-size: 14px; border-bottom: 1px solid var(--border-hover); }
+.deleteButton { min-height: 48px; min-width: 44px; padding: 10px 14px; color: var(--danger); font-size: 14px; border: 1px solid var(--border-hover); }
+.form, .restore { display: flex; flex-direction: column; gap: 12px; margin-block: 20px; }
+.form label, .restore label { color: var(--text-secondary); font: 12px/1.6 var(--font-dm-mono),monospace; }
+.form input, .restore input { width: 100%; min-height: 48px; padding: 12px 14px; color: var(--text-primary); background: var(--bg-primary); border: 1px solid var(--border-hover); font: 16px/1.5 var(--font-barlow),sans-serif; border-radius: 0; }
+.inputRow { display: flex; align-items: stretch; gap: 12px; }
+.inputRow input { flex: 1; }
+.inputRow button { flex-shrink: 0; }
+.account { color: var(--text-secondary); font: 12px/1.7 var(--font-dm-mono),monospace; overflow-wrap: anywhere; margin-block: 20px 12px; }
+.snapshot { padding: 16px 18px; background: var(--bg-elevated); border-left: 3px solid var(--accent); margin-block: 16px; }
+.snapshot span { color: var(--text-secondary); font: 11px/1.6 var(--font-dm-mono),monospace; text-transform: uppercase; letter-spacing: .08em; }
+.snapshot p { font-size: 15px; line-height: 1.6; color: var(--text-primary); margin-top: 6px; overflow-wrap: anywhere; }
+.backupActions { margin-block: 20px; }
+.backupActions > .help { margin-top: 12px; }
+.confirm, .restore { border: 1px solid var(--border-hover); padding: 20px; background: var(--bg-primary); }
+.confirm { margin-block: 16px; }
+.confirm h4, .restore h4 { font-size: 21px; line-height: 1.4; font-weight: 600; }
+.confirm p, .restore p { font-size: 15px; line-height: 1.6; color: var(--text-secondary); margin-block: 12px; }
+.restore p { margin-block: 0; }
+.restore button { align-self: start; margin-top: 4px; }
+.help, .snapshot .help, .restore .help { font-size: 13px; line-height: 1.6; color: var(--text-muted); overflow-wrap: anywhere; }
+.panel > .help { margin-top: 18px; }
+.error, .status:not(:empty) { border-left: 3px solid var(--accent); background: var(--bg-elevated); padding: 14px 18px; margin-block: 16px; font-size: 14px; line-height: 1.6; overflow-wrap: anywhere; }
+.error { color: var(--danger); border-color: var(--danger); }
+.panel button:disabled, .panel input:disabled { opacity: .55; cursor: not-allowed; }
+@media (max-width: 600px) { .heading { flex-wrap: wrap; }.inputRow { flex-direction: column; }.inputRow button { align-self: start; }.confirm, .restore { padding: 16px; }.snapshot { padding: 14px; } }
+@media (prefers-reduced-motion: reduce) { .panel *, .panel *::before, .panel *::after { transition: none !important; animation: none !important; } }

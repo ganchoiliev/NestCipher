@@ -1,43 +1,51 @@
 @import "tailwindcss";
-
-/* ── Design Tokens ── */
 :root {
-  --bg-primary: #F8F9FA;
-  --bg-card: #FFFFFF;
-  --bg-elevated: #F1F3F5;
-  --accent: #00B894;
-  --accent-hover: #009B7D;
-  --accent-glow: #00D4AA;
-  --warning: #F59E0B;
-  --danger: #EF4444;
-  --text-primary: #1A1A25;
-  --text-secondary: #6B7280;
-  --text-muted: #9CA3AF;
-  --border-subtle: rgba(0, 0, 0, 0.06);
-  --border-hover: rgba(0, 0, 0, 0.12);
+  color-scheme: light;
+  --bg-primary: #f2f5ed;
+  --bg-card: #ffffff;
+  --bg-elevated: #e7ece0;
+  --accent: #365b0e;
+  --accent-hover: #294708;
+  --accent-glow: #365b0e;
+  --text-on-accent: #ffffff;
+  --success: #246848;
+  --info: #335e89;
+  --warning: #80520b;
+  --danger: #b0373c;
+  --text-primary: #111a13;
+  --text-secondary: #465343;
+  --text-muted: #596752;
+  --border-subtle: #cbd5c4;
+  --border-hover: #687762;
+  --signal-lime: #c7ff48;
+  --signal-ink: #0b100d;
+  --font-instrument-sans: var(--font-barlow);
+  --font-ibm-plex-mono: var(--font-dm-mono);
   --background: var(--bg-primary);
   --foreground: var(--text-primary);
 }
-
 [data-theme="dark"],
 .dark {
-  --bg-primary: #0A0A0F;
-  --bg-card: #12121A;
-  --bg-elevated: #1A1A25;
-  --accent: #00D4AA;
-  --accent-hover: #00B894;
-  --accent-glow: #00F5C8;
-  --warning: #F59E0B;
-  --danger: #EF4444;
-  --text-primary: #F1F1F3;
-  --text-secondary: #9CA3AF;
-  --text-muted: #6B7280;
-  --border-subtle: rgba(255, 255, 255, 0.06);
-  --border-hover: rgba(255, 255, 255, 0.12);
+  color-scheme: dark;
+  --bg-primary: #0b100d;
+  --bg-card: #151d17;
+  --bg-elevated: #1e291f;
+  --accent: #c7ff48;
+  --accent-hover: #dfff94;
+  --accent-glow: #c7ff48;
+  --text-on-accent: #0b100d;
+  --success: #9dd6ba;
+  --info: #a7cbe8;
+  --warning: #e0c670;
+  --danger: #f09b9f;
+  --text-primary: #f0f3e9;
+  --text-secondary: #c1cbbd;
+  --text-muted: #acb6a8;
+  --border-subtle: #354336;
+  --border-hover: #677a65;
   --background: var(--bg-primary);
   --foreground: var(--text-primary);
 }
-
 @theme inline {
   --color-background: var(--background);
   --color-foreground: var(--foreground);
@@ -47,6 +55,9 @@
   --color-accent: var(--accent);
   --color-accent-hover: var(--accent-hover);
   --color-accent-glow: var(--accent-glow);
+  --color-text-on-accent: var(--text-on-accent);
+  --color-success: var(--success);
+  --color-info: var(--info);
   --color-warning: var(--warning);
   --color-danger: var(--danger);
   --color-text-primary: var(--text-primary);
@@ -54,96 +65,235 @@
   --color-text-muted: var(--text-muted);
   --color-border-subtle: var(--border-subtle);
   --color-border-hover: var(--border-hover);
-  --font-sans: var(--font-geist-sans);
-  --font-mono: var(--font-geist-mono);
+  --font-sans: var(--font-barlow);
+  --font-mono: var(--font-dm-mono);
 }
-
-/* ── Base ── */
+html {
+  scroll-behavior: smooth;
+  scroll-padding-top: 112px;
+}
 body {
   background: var(--background);
   color: var(--foreground);
-  font-family: var(--font-geist-sans), system-ui, sans-serif;
+  font-family: var(--font-barlow), sans-serif;
 }
-
-/* ── Shimmer animation for logo ── */
-@keyframes shimmer {
-  0% { background-position: -200% center; }
-  100% { background-position: 200% center; }
+::selection {
+  background: var(--accent);
+  color: var(--text-on-accent);
 }
-
-.logo-shimmer:hover {
-  background: linear-gradient(
-    90deg,
-    var(--text-primary) 0%,
-    var(--accent-glow) 40%,
-    var(--accent) 60%,
-    var(--text-primary) 100%
-  );
-  background-size: 200% auto;
-  background-clip: text;
-  -webkit-background-clip: text;
-  -webkit-text-fill-color: transparent;
-  animation: shimmer 1.5s ease-in-out infinite;
+button,
+a,
+input,
+textarea,
+select,
+summary {
+  -webkit-tap-highlight-color: transparent;
+  touch-action: manipulation;
 }
-
-/* ── Skeleton shimmer for loading states ── */
-@keyframes skeleton-shimmer {
-  0% { background-position: -200% 0; }
-  100% { background-position: 200% 0; }
+button:not(:disabled),
+a,
+summary {
+  cursor: pointer;
 }
-
+button:disabled {
+  cursor: not-allowed;
+}
+:focus-visible {
+  outline: 3px solid var(--accent);
+  outline-offset: 5px;
+}
+input,
+textarea,
+select {
+  font: inherit;
+}
+h1,
+h2,
+h3 {
+  text-wrap: balance;
+}
+input::placeholder,
+textarea::placeholder {
+  opacity: 1;
+}
+.site-container {
+  width: min(100% - 96px, 1360px);
+  margin-inline: auto;
+}
+.eyebrow {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  font:
+    400 12px/1.6 var(--font-dm-mono),
+    monospace;
+  letter-spacing: 0.035em;
+  text-transform: uppercase;
+  color: var(--text-muted);
+}
+.eyebrow::before {
+  content: "";
+  width: 8px;
+  height: 8px;
+  background: var(--accent);
+  flex: 0 0 8px;
+}
+.page-header {
+  padding-block: 44px 38px;
+  border-bottom: 1px solid var(--border-subtle);
+  margin-bottom: 32px;
+}
+.page-title {
+  font:
+    700 clamp(44px, 5.5vw, 80px) / 1 var(--font-barlow-condensed),
+    Impact,
+    sans-serif;
+  letter-spacing: -0.02em;
+  text-transform: uppercase;
+  margin-top: 20px;
+}
+.page-description {
+  max-width: 650px;
+  color: var(--text-secondary);
+  font-size: 18px;
+  line-height: 1.6;
+  margin-top: 20px;
+}
+.breadcrumb {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+  align-items: center;
+  color: var(--text-muted);
+  font:
+    12px/1.6 var(--font-dm-mono),
+    monospace;
+}
+.breadcrumb a {
+  display: inline-flex;
+  align-items: center;
+  min-height: 44px;
+  min-width: 44px;
+}
+.breadcrumb a:hover {
+  color: var(--accent);
+}
+.tool-workspace {
+  background: var(--bg-card);
+  border: 1px solid var(--border-hover);
+  padding: clamp(20px, 3vw, 36px);
+}
+.button-primary,
+.button-secondary {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 18px;
+  min-height: 48px;
+  min-width: 44px;
+  padding: 12px 20px;
+  font-size: 16px;
+  font-weight: 600;
+  transition:
+    background-color 160ms,
+    border-color 160ms,
+    color 160ms;
+}
+.button-primary {
+  color: var(--text-on-accent);
+  background: var(--accent);
+  border: 1px solid var(--accent);
+}
+.button-primary:hover {
+  background: var(--accent-hover);
+  border-color: var(--accent-hover);
+}
+.button-secondary {
+  color: var(--text-primary);
+  border: 1px solid var(--border-hover);
+  background: transparent;
+}
+.button-secondary:hover {
+  background: var(--bg-elevated);
+  border-color: var(--accent);
+}
+.text-link {
+  display: inline-flex;
+  min-height: 44px;
+  gap: 14px;
+  align-items: center;
+  font-size: 16px;
+  color: var(--text-primary);
+}
+.text-link:hover {
+  color: var(--accent);
+}
+.section-heading {
+  font:
+    700 clamp(34px, 3.6vw, 52px) / 1.05 var(--font-barlow-condensed),
+    Impact,
+    sans-serif;
+  text-transform: uppercase;
+  letter-spacing: -0.015em;
+}
+.skip-link {
+  position: fixed;
+  top: -80px;
+  left: 20px;
+  z-index: 100;
+  padding: 12px 20px;
+  color: var(--text-on-accent);
+  background: var(--accent);
+}
+.skip-link:focus {
+  top: 12px;
+}
 .skeleton-shimmer {
-  background-color: #1A1A25;
-  background-image: linear-gradient(
-    90deg,
-    transparent 0%,
-    rgba(255, 255, 255, 0.06) 50%,
-    transparent 100%
-  );
-  background-size: 200% 100%;
-  animation: skeleton-shimmer 1.5s ease-in-out infinite, skeleton-pulse 2s ease-in-out infinite;
+  background: var(--bg-elevated);
+  animation: skeleton-pulse 1.6s ease-in-out infinite;
 }
-
 @keyframes skeleton-pulse {
-  0%, 100% { opacity: 1; }
-  50% { opacity: 0.7; }
-}
-
-/* ── Reduced motion ── */
-@media (prefers-reduced-motion: reduce) {
-  *, *::before, *::after {
-    animation-duration: 0.01ms !important;
-    animation-iteration-count: 1 !important;
-    transition-duration: 0.01ms !important;
+  50% {
+    opacity: 0.45;
   }
 }
-
-/* ── Scrollbar (dark) ── */
-.dark ::-webkit-scrollbar { width: 8px; }
-.dark ::-webkit-scrollbar-track { background: var(--bg-primary); }
-.dark ::-webkit-scrollbar-thumb { background: var(--bg-elevated); border-radius: 4px; }
-.dark ::-webkit-scrollbar-thumb:hover { background: var(--text-muted); }
-
-
-/* CSS-only entrance animation: content stays visible without JavaScript
-   (replaces framer-motion initial-hidden states, docs/THREAT-MODEL.md #6). */
 @keyframes rise-in {
   from {
-    opacity: 0;
-    transform: translateY(16px);
+    opacity: 0.3;
+    transform: translateY(8px);
   }
   to {
     opacity: 1;
     transform: none;
   }
 }
-
 .rise-in {
-  animation: rise-in 0.5s ease-out both;
+  animation: rise-in 0.4s ease-out both;
 }
-
+@media (max-width: 1050px) {
+  .site-container {
+    width: calc(100% - 64px);
+  }
+}
+@media (max-width: 700px) {
+  .site-container {
+    width: calc(100% - 40px);
+  }
+  .page-header {
+    padding-block: 24px 32px;
+  }
+  .page-description {
+    font-size: 17px;
+  }
+}
 @media (prefers-reduced-motion: reduce) {
-  .rise-in {
-    animation: none;
+  html {
+    scroll-behavior: auto;
+  }
+  *,
+  *::before,
+  *::after {
+    animation: none !important;
+    transition: none !important;
   }
 }

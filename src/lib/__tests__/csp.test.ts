@@ -1,5 +1,10 @@
 import { describe, expect, it } from "vitest";
-import { buildCsp, generateNonce } from "../csp";
+import {
+  buildCsp,
+  generateNonce,
+  isResearchWorkbenchPath,
+  WORKBENCH_REQUEST_HEADER,
+} from "../csp";
 import { scoreCsp } from "../csp-score";
 
 describe("buildCsp", () => {
@@ -34,6 +39,26 @@ describe("buildCsp", () => {
   it("generates a fresh nonce per call", () => {
     expect(generateNonce()).not.toBe(generateNonce());
   });
+
+  it("removes analytics connections from the workbench without relaxing other directives", () => {
+    const workbench = buildCsp(nonce, false, { analytics: false });
+    expect(workbench.split("; ")).toContain("connect-src 'self'");
+    expect(workbench).not.toContain("plausible.io");
+    const exceptConnections = (policy: string) => policy.split("; ")
+      .filter((directive) => !directive.startsWith("connect-src "));
+    expect(exceptConnections(workbench)).toEqual(exceptConnections(prod));
+    expect(scoreCsp(workbench).score).toBe(20);
+  });
+
+  it.each([
+    ["/tools/research-workbench", true],
+    ["/tools/research-workbench/", true],
+    ["/tools/research-workbench-other", false],
+    ["/tools/email-analyzer", false],
+    ["/tools", false],
+  ])("uses an exact workbench route boundary for %s", (path, expected) => {
+    expect(isResearchWorkbenchPath(path)).toBe(expected);
+  });
 });
 
 describe("proxy serves the CSP on every page route", () => {
@@ -41,10 +66,13 @@ describe("proxy serves the CSP on every page route", () => {
     "/",
     "/tools",
     "/about",
+    "/community",
+    "/privacy",
     "/tools/email-analyzer",
     "/tools/headers-scanner",
     "/tools/owasp-llm-top-10",
     "/tools/prompt-injection-tester",
+    "/tools/research-workbench",
   ];
 
   it.each(pageRoutes)("%s gets a nonce CSP and x-nonce", async (path) => {
@@ -57,6 +85,34 @@ describe("proxy serves the CSP on every page route", () => {
     expect(csp).toContain("'strict-dynamic'");
     expect(csp).toMatch(/'nonce-[A-Za-z0-9+/=]+'/);
     expect(csp).not.toContain("'unsafe-eval'"); // vitest runs with NODE_ENV=test
+  });
+
+  it.each([
+    ["/tools/research-workbench", "0", "1", false],
+    ["/tools/research-workbench/", "0", "1", false],
+    ["/tools/email-analyzer", "1", "0", true],
+    ["/tools/research-workbench-other", "1", "0", true],
+  ])("overwrites an inbound boundary header on %s", async (path, inbound, expected, allowsAnalytics) => {
+    const { proxy } = await import("../../proxy");
+    const { NextRequest } = await import("next/server");
+    const response = proxy(new NextRequest(`https://nestcipher.com${path}`, {
+      headers: {
+        [WORKBENCH_REQUEST_HEADER]: inbound,
+        "x-nonce": "untrusted-inbound-nonce",
+        "next-router-prefetch": "1",
+        purpose: "prefetch",
+      },
+    }));
+    expect(response.headers.get(`x-middleware-request-${WORKBENCH_REQUEST_HEADER}`)).toBe(expected);
+    expect(response.headers.get("x-middleware-request-x-nonce")).not.toBe("untrusted-inbound-nonce");
+    const csp = response.headers.get("Content-Security-Policy")!;
+    expect(csp.includes("https://plausible.io")).toBe(allowsAnalytics);
+    expect(csp).toContain("'strict-dynamic'");
+  });
+
+  it("does not exempt prefetches from overwriting the boundary header", async () => {
+    const { config } = await import("../../proxy");
+    expect(config.matcher[0]).not.toHaveProperty("missing");
   });
 });
 

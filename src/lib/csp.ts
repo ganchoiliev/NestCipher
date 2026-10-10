@@ -22,14 +22,24 @@ export function generateNonce(): string {
   return Buffer.from(crypto.randomUUID()).toString("base64");
 }
 
-export function buildCsp(nonce: string, isDev: boolean): string {
+export const WORKBENCH_REQUEST_HEADER = "x-nestcipher-workbench";
+
+export function isResearchWorkbenchPath(pathname: string): boolean {
+  return pathname.replace(/\/+$/, "") === "/tools/research-workbench";
+}
+
+export function buildCsp(
+  nonce: string,
+  isDev: boolean,
+  { analytics = true }: { analytics?: boolean } = {},
+): string {
   return [
     `default-src 'self'`,
     `script-src 'self' 'nonce-${nonce}' 'strict-dynamic'${isDev ? " 'unsafe-eval'" : ""}`,
     `style-src 'self' 'unsafe-inline'`,
     `img-src 'self' data:`,
     `font-src 'self'`,
-    `connect-src 'self' https://plausible.io`,
+    `connect-src 'self'${analytics ? " https://plausible.io" : ""}`,
     `object-src 'none'`,
     `base-uri 'none'`,
     `form-action 'self'`,

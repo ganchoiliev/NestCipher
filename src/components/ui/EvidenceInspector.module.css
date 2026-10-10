@@ -1,0 +1,226 @@
+.inspector {
+  display: grid;
+  grid-template-columns: minmax(0, 0.85fr) minmax(0, 1.15fr);
+  gap: 80px;
+  border-top: 1px solid var(--border-subtle);
+  padding-block: 60px 82px;
+  font-family: var(--font-barlow), sans-serif;
+}
+.intro {
+  min-width: 0;
+}
+.eyebrow,
+.label,
+.specimenLabel {
+  font:
+    400 12px/1.5 var(--font-dm-mono),
+    monospace;
+  letter-spacing: 0.035em;
+  text-transform: uppercase;
+}
+.eyebrow {
+  color: var(--text-muted);
+}
+.intro h2 {
+  margin-block: 22px;
+  font:
+    700 clamp(44px, 5vw, 72px) / 1 var(--font-barlow-condensed),
+    Impact,
+    sans-serif;
+  text-transform: uppercase;
+  letter-spacing: -0.015em;
+  color: var(--text-primary);
+}
+.description {
+  max-width: 400px;
+  font-size: 18px;
+  line-height: 1.5;
+  color: var(--text-secondary);
+}
+.examples {
+  display: grid;
+  gap: 10px;
+  margin-top: 28px;
+}
+.examples button {
+  min-height: 48px;
+  min-width: 44px;
+  border: 1px solid var(--border-hover);
+  padding: 12px 16px;
+  background: transparent;
+  color: var(--text-primary);
+  font:
+    400 13px/1.5 var(--font-dm-mono),
+    monospace;
+  text-align: left;
+  cursor: pointer;
+  touch-action: manipulation;
+  transition:
+    background-color 150ms,
+    border-color 150ms;
+}
+.examples button:hover {
+  background: var(--bg-elevated);
+}
+.examples button[aria-pressed="true"] {
+  border-color: var(--accent);
+  background: var(--accent);
+  color: var(--text-on-accent);
+}
+.examples button:focus-visible,
+.source summary:focus-visible {
+  outline: 3px solid var(--accent);
+  outline-offset: 5px;
+}
+.inspection {
+  min-width: 0;
+  border: 1px solid var(--border-hover);
+  background: var(--bg-card);
+}
+.specimenLabel {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: space-between;
+  gap: 8px 12px;
+  border-bottom: 1px solid var(--border-hover);
+  padding: 16px 24px;
+  color: var(--accent);
+}
+.evidencePiece {
+  min-width: 0;
+  border-bottom: 1px solid var(--border-subtle);
+  padding: 24px;
+  overflow-wrap: anywhere;
+}
+.label {
+  display: block;
+  margin-bottom: 10px;
+  color: var(--text-muted);
+}
+.visible {
+  font-size: 22px;
+  line-height: 1.5;
+  color: var(--text-primary);
+}
+.destination {
+  font:
+    400 16px/1.5 var(--font-dm-mono),
+    monospace;
+  color: var(--accent);
+}
+.source {
+  min-width: 0;
+  border-bottom: 1px solid var(--border-subtle);
+  padding-inline: 24px;
+}
+.source summary {
+  min-height: 48px;
+  padding-block: 13px;
+  color: var(--text-primary);
+  font-size: 16px;
+  line-height: 1.5;
+  cursor: pointer;
+  touch-action: manipulation;
+}
+.source pre {
+  margin-block: 0 14px;
+  padding-bottom: 4px;
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+  color: var(--text-secondary);
+  font:
+    400 14px/1.7 var(--font-dm-mono),
+    monospace;
+}
+.source code {
+  font: inherit;
+}
+.finding {
+  min-width: 0;
+  padding: 24px;
+  overflow-wrap: anywhere;
+}
+.finding ul {
+  margin: 0;
+  padding-left: 20px;
+  color: var(--text-primary);
+  font-size: 18px;
+  line-height: 1.45;
+  list-style: disc;
+}
+.finding li + li {
+  margin-top: 8px;
+}
+.annotation {
+  margin-top: 14px;
+  color: var(--text-secondary);
+  font-size: 15px;
+  line-height: 1.5;
+}
+.disclaimer {
+  border-top: 1px solid var(--border-subtle);
+  padding: 16px 24px;
+  color: var(--text-muted);
+  font-size: 14px;
+  line-height: 1.5;
+}
+.noScript {
+  margin-top: 18px;
+  color: var(--text-secondary);
+  font-size: 14px;
+  line-height: 1.5;
+}
+@media (max-width: 1050px) {
+  .inspector {
+    gap: 40px;
+  }
+}
+@media (max-width: 700px) {
+  .inspector {
+    grid-template-columns: minmax(0, 1fr);
+    gap: 24px;
+    padding-block: 38px 42px;
+  }
+  .intro h2 {
+    font-size: 54px;
+  }
+  .description {
+    font-size: 17px;
+  }
+  .examples {
+    gap: 8px;
+  }
+  .examples button {
+    font-size: 12px;
+  }
+  .specimenLabel {
+    padding: 14px 20px;
+  }
+  .evidencePiece,
+  .finding {
+    padding: 20px;
+  }
+  .visible {
+    font-size: 18px;
+  }
+  .destination {
+    font-size: 14px;
+  }
+  .source {
+    padding-inline: 20px;
+  }
+  .finding ul {
+    font-size: 16px;
+  }
+  .annotation {
+    font-size: 14px;
+  }
+  .disclaimer {
+    padding: 16px 20px;
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .examples button {
+    transition: none;
+  }
+}
