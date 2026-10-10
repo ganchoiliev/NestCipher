@@ -1,7 +1,6 @@
 "use client";
 
-import { useState, useEffect, useCallback } from "react";
-import { motion, AnimatePresence } from "framer-motion";
+import { useState, useCallback } from "react";
 import type { OwaspVulnerability, Difficulty } from "@/types/owasp";
 import { QuizResults } from "./QuizResults";
 
@@ -20,11 +19,15 @@ function shuffle<T>(arr: T[]): T[] {
 }
 
 export function QuizMode({ vulnerabilities, onBackToExplorer }: QuizModeProps) {
-  const [order, setOrder] = useState<OwaspVulnerability[]>([]);
+  const [order, setOrder] = useState<OwaspVulnerability[]>(() =>
+    shuffle(vulnerabilities),
+  );
   const [currentIndex, setCurrentIndex] = useState(0);
   const [selectedOption, setSelectedOption] = useState<number | null>(null);
   const [answered, setAnswered] = useState(false);
-  const [results, setResults] = useState<{ questionTitle: string; correct: boolean; difficulty: Difficulty }[]>([]);
+  const [results, setResults] = useState<
+    { questionTitle: string; correct: boolean; difficulty: Difficulty }[]
+  >([]);
   const [showResults, setShowResults] = useState(false);
 
   const initQuiz = useCallback(() => {
@@ -35,10 +38,6 @@ export function QuizMode({ vulnerabilities, onBackToExplorer }: QuizModeProps) {
     setResults([]);
     setShowResults(false);
   }, [vulnerabilities]);
-
-  useEffect(() => {
-    initQuiz();
-  }, [initQuiz]);
 
   if (order.length === 0) return null;
 
@@ -89,8 +88,10 @@ export function QuizMode({ vulnerabilities, onBackToExplorer }: QuizModeProps) {
     <div className="w-full max-w-2xl mx-auto">
       {/* Progress */}
       <div className="mb-8">
-        <div className="flex justify-between text-sm text-text-muted mb-2">
-          <span>Question {currentIndex + 1} of {order.length}</span>
+        <div className="flex justify-between font-mono text-xs text-text-muted mb-4">
+          <span>
+            Question {currentIndex + 1} of {order.length}
+          </span>
           <button
             type="button"
             onClick={onBackToExplorer}
@@ -99,119 +100,123 @@ export function QuizMode({ vulnerabilities, onBackToExplorer }: QuizModeProps) {
             Exit Quiz
           </button>
         </div>
-        <div className="h-1.5 rounded-full bg-bg-elevated overflow-hidden">
-          <motion.div
-            className="h-full rounded-full bg-accent"
-            animate={{ width: `${progress}%` }}
-            transition={{ duration: 0.3 }}
-          />
+        <div
+          role="progressbar"
+          aria-label="Quiz progress"
+          aria-valuemin={0}
+          aria-valuemax={order.length}
+          aria-valuenow={currentIndex + 1}
+          className="h-1 overflow-hidden bg-bg-elevated"
+        >
+          <div className="h-full bg-accent" style={{ width: `${progress}%` }} />
         </div>
       </div>
 
       {/* Question */}
-      <AnimatePresence mode="wait">
-        <motion.div
-          key={currentIndex}
-          initial={{ opacity: 0, x: 20 }}
-          animate={{ opacity: 1, x: 0 }}
-          exit={{ opacity: 0, x: -20 }}
-          transition={{ duration: 0.2 }}
+
+      <div key={currentIndex}>
+        <p className="font-mono text-sm text-accent mb-2">
+          {current.id}: {current.title}
+        </p>
+        <h2
+          id="quiz-question"
+          className="mb-6 text-2xl font-medium leading-relaxed tracking-tight text-text-primary"
         >
-          <p className="font-mono text-sm text-accent mb-2">
-            {current.id}: {current.title}
-          </p>
-          <p className="text-lg text-text-primary font-medium leading-relaxed mb-6">
-            {quiz.question}
-          </p>
+          {quiz.question}
+        </h2>
 
-          {/* Options */}
-          <div className="space-y-3">
-            {quiz.options.map((option, i) => {
-              let className =
-                "w-full text-left rounded-lg border p-4 text-sm transition-all min-h-[48px]";
+        {/* Options */}
+        <div role="group" aria-labelledby="quiz-question" className="space-y-3">
+          {quiz.options.map((option, i) => {
+            let className =
+              "w-full text-left border p-4 text-sm transition-all min-h-[48px]";
 
-              if (!answered) {
-                className +=
-                  selectedOption === i
-                    ? " border-accent bg-accent/5 text-text-primary"
-                    : " border-border-subtle bg-bg-card text-text-secondary hover:border-border-hover";
+            if (!answered) {
+              className +=
+                selectedOption === i
+                  ? " border-accent bg-accent/5 text-text-primary"
+                  : " border-border-hover bg-bg-card text-text-secondary hover:border-border-hover";
+            } else {
+              if (i === quiz.correctIndex) {
+                className += " border-success bg-success/10 text-text-primary";
+              } else if (i === selectedOption && i !== quiz.correctIndex) {
+                className += " border-danger bg-danger/10 text-text-primary";
               } else {
-                if (i === quiz.correctIndex) {
-                  className += " border-[#00D4AA] bg-[#00D4AA]/10 text-text-primary";
-                } else if (i === selectedOption && i !== quiz.correctIndex) {
-                  className += " border-[#EF4444] bg-[#EF4444]/10 text-text-primary";
-                } else {
-                  className += " border-border-subtle bg-bg-card text-text-muted";
-                }
+                className += " border-border-subtle bg-bg-card text-text-muted";
               }
+            }
 
-              return (
-                <motion.button
-                  key={i}
-                  type="button"
-                  onClick={() => !answered && setSelectedOption(i)}
-                  disabled={answered}
-                  whileHover={!answered ? { scale: 1.01 } : undefined}
-                  whileTap={!answered ? { scale: 0.99 } : undefined}
-                  className={className}
-                >
-                  <span className="flex items-start gap-3">
-                    <span className="font-mono text-xs text-text-muted mt-0.5 shrink-0">
-                      {String.fromCharCode(65 + i)}.
-                    </span>
-                    {option}
+            return (
+              <button
+                key={i}
+                type="button"
+                onClick={() => !answered && setSelectedOption(i)}
+                disabled={answered}
+                aria-pressed={selectedOption === i}
+                className={className}
+              >
+                <span className="flex items-start gap-3">
+                  <span className="font-mono text-xs text-text-muted mt-0.5 shrink-0">
+                    {String.fromCharCode(65 + i)}.
                   </span>
-                </motion.button>
-              );
-            })}
-          </div>
-
-          {/* Explanation */}
-          <AnimatePresence>
-            {answered && (
-              <motion.div
-                initial={{ opacity: 0, y: 10 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ duration: 0.3 }}
-                className="mt-4 border-l-2 border-accent/40 bg-bg-elevated rounded-r-lg pl-4 pr-4 py-3"
-              >
-                <p className="text-sm text-text-secondary leading-relaxed">{quiz.explanation}</p>
-                <span className={`inline-block mt-2 rounded-full px-2.5 py-0.5 text-xs font-medium capitalize ${
-                  current.difficulty === "introductory"
-                    ? "bg-green-500/10 text-green-400"
-                    : current.difficulty === "intermediate"
-                    ? "bg-amber-500/10 text-amber-400"
-                    : "bg-blue-500/10 text-blue-400"
-                }`}>
-                  {current.difficulty} question
+                  {option}
                 </span>
-              </motion.div>
-            )}
-          </AnimatePresence>
+              </button>
+            );
+          })}
+        </div>
 
-          {/* Action button */}
-          <div className="mt-6">
-            {!answered ? (
-              <button
-                type="button"
-                onClick={handleSubmit}
-                disabled={selectedOption === null}
-                className="rounded-lg bg-accent px-8 py-3 text-sm font-medium text-bg-primary hover:bg-accent-hover transition-colors disabled:opacity-50"
-              >
-                Check Answer
-              </button>
-            ) : (
-              <button
-                type="button"
-                onClick={handleNext}
-                className="rounded-lg bg-accent px-8 py-3 text-sm font-medium text-bg-primary hover:bg-accent-hover transition-colors"
-              >
-                {isLast ? "See Results" : "Next Question"}
-              </button>
-            )}
+        {/* Explanation */}
+
+        {answered && (
+          <div
+            role="status"
+            className="mt-5 border-l-2 border-accent/40 bg-bg-elevated p-5"
+          >
+            <p className="mb-2 text-sm font-semibold text-text-primary">
+              {selectedOption === quiz.correctIndex
+                ? "Correct answer."
+                : "Review this one."}
+            </p>
+            <p className="text-sm leading-relaxed text-text-secondary">
+              {quiz.explanation}
+            </p>
+            <span
+              className={`inline-block mt-2 rounded px-2.5 py-0.5 text-xs font-medium capitalize ${
+                current.difficulty === "introductory"
+                  ? "bg-success/10 text-success"
+                  : current.difficulty === "intermediate"
+                    ? "bg-warning/10 text-warning"
+                    : "bg-info/10 text-info"
+              }`}
+            >
+              {current.difficulty} question
+            </span>
           </div>
-        </motion.div>
-      </AnimatePresence>
+        )}
+
+        {/* Action button */}
+        <div className="mt-6">
+          {!answered ? (
+            <button
+              type="button"
+              onClick={handleSubmit}
+              disabled={selectedOption === null}
+              className="button-primary disabled:opacity-50"
+            >
+              Check Answer
+            </button>
+          ) : (
+            <button
+              type="button"
+              onClick={handleNext}
+              className="button-primary disabled:opacity-50"
+            >
+              {isLast ? "See Results" : "Next Question"}
+            </button>
+          )}
+        </div>
+      </div>
     </div>
   );
 }

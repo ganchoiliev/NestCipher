@@ -25,7 +25,7 @@ export default function HeadersScannerPage() {
   return (
     <>
       <noscript>
-        <p className="mx-auto max-w-3xl px-4 pt-8 text-center text-sm text-text-secondary">
+        <p className="site-container pt-8 text-sm text-text-secondary">
           The scanner form needs JavaScript to run. Everything else on this site works without it.
         </p>
       </noscript>

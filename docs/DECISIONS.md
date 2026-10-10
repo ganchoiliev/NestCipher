@@ -153,3 +153,88 @@ header-aware fix (SPF/DKIM) belongs to Email X-Ray in Phase 2, not Phase 0.
   out-of-scope incl. volumetric DoS and cost exhaustion, safe harbour,
   honest solo-operator response times), RFC 9116 security.txt (expires
   2027-10-09), /security/thanks Hall of Fame stub.
+
+## 2026-10-10 — Private workbench continuity
+
+- The owner selected an encrypted local vault. Drafts remain in page memory;
+  Save locally is explicit. IndexedDB stores opaque IDs/write tokens, IVs and
+  authenticated ciphertext. Titles, timestamps, revisions, disclosure metadata
+  and evidence are encrypted. AES-256-GCM uses fresh 96-bit IVs and 128-bit tags;
+  PBKDF2-SHA-256 uses a random 128-bit salt and 600,000 iterations through native
+  WebCrypto. The nonextractable key remains in the workbench session; no account,
+  passphrase storage, recovery, sync or autosave is provided.
+- This protects content at rest, not the origin or an unlocked page. A separate
+  private origin remains a stronger future boundary. Same-origin scripts can
+  access/delete ciphertext, and compromised page code can use unlocked keys or
+  capture passphrases. Lock clears UI/key references and invalidates pending
+  operations, without claiming secure memory erasure. Browser storage is best
+  effort; readable private JSON backups remain essential.
+- Vault limits: 25 records, 50 MiB total plaintext, 5 MiB per experiment. Writes
+  compare encrypted revisions and transaction-scoped opaque tokens before
+  replacing a saved copy; success is reported only after transaction completion.
+  Conflicts and storage failures retain the active draft. Version 1 backups
+  migrate to schema 2 after strict legacy validation; evidence is unchanged.
+- Existing completed email/header reports are transferred through explicitly
+  downloaded private report-only JSON files. Capturing or attaching never runs
+  a provider or scanner, changes execution/assessment, or guesses missing
+  provenance. Original email input is excluded; reports may quote sensitive
+  content. Attached reports inherit the experiment's disclosure restriction.
+- Prompt differences are bounded by size/line count. Original evidence remains
+  available, with CRLF/LF and invisible characters labelled in the display only.
+  The owner-supplied end-plus-30-days policy and `publish: false` remain in every
+  research export; no public publishing feature exists.
+- Next.js and matching ESLint config updated to 16.4.0 after published runtime
+  advisories were found in 16.2.1. Compatible audit fixes applied to development
+  dependencies; no forced downgrade. See release validation for remaining
+  development-only advisory status and actual checks.
+
+## 2026-10-10 — Authored learning labs and private preparation
+
+- The owner selected learning labs plus research workflow. Preserve Signal and
+  the four active utilities; add a separate /labs index and three authored,
+  versioned exercises with three cases each. No model runner or challenge
+  submission is added. All tasks, replies and action traces are invented.
+- Teach authority through a structured trusted-user operation/recipient check,
+  action evidence through an initially inconclusive reply and revealed authored
+  trace, and comparisons through explicit matched/changed/unknown conditions.
+  A proposed action is not a completed effect; two missing values do not match;
+  one fixture does not establish causality or robustness. Primary sources are
+  linked on each lesson. Complete native workbooks support no-JavaScript reading.
+- Choices and review progress remain in React page memory. Only one exact,
+  allowlisted lab ID crosses a native new-tab no-opener/noreferrer handoff. The
+  Workbench retains its fresh-document script boundary. Unknown/array values
+  are ignored. Opening the route does not create a record, save or unlock.
+- Explicit Start uses the existing dirty-draft replacement guard. Prepared
+  schema 2 experiments have fresh IDs, a baseline/variant parent link, exact
+  authored inputs and imported provenance. Outcomes, execution time,
+  assessments and attachments remain empty. Answer keys and fictional traces
+  never become observed results. The ordinary encrypted vault and private
+  export paths handle these records without a new storage or backup format.
+- Public contribution starts with a local Markdown template and maintainer
+  review of independently invented examples. No submission endpoint or
+  publishing action exists. Preserve the owner's confirmed-end-plus-30-days
+  minimum disclosure restriction, unknown-end restriction and publish:false.
+  Public lessons and portfolio screenshots contain no live challenge findings.
+# 2026-10-10 — Optional encrypted account backup
+
+- The owner authorized a dedicated Supabase project and its additional
+  $10/month MICRO compute cost. Runtime access uses the existing publishable key;
+  no service-role credential is needed.
+- Public tools and local research need no account. Check account is explicit;
+  saved records upload only after an explicit backup action. Unsaved drafts,
+  passphrases and plaintext evidence stay local.
+- Keep one encrypted snapshot per owner, a 3 MiB API cap, database RLS and
+  owner-derived save/delete functions with atomic remote revision checks. Bind
+  requests to the checked account to prevent cross-tab sign-in races.
+- Add a portable encrypted manifest and authenticated empty-browser restore.
+  Cancellation before installation commits leaves no vault; existing local
+  vaults are never merged or replaced. A full older valid snapshot can still be
+  restored; this is not an immutable audit log.
+- Same-origin server routes preserve the Workbench network policy. HttpOnly
+  account cookies and no-store responses support server-only PKCE auth; opening
+  the emailed link in the requesting browser is required.
+- Cloud backup never publishes. The 30-full-day minimum after a confirmed
+  challenge end, private exports and explicit publication review remain intact.
+- Public email sign-in requires custom SMTP; the provider's default mail is
+  restricted to project-team addresses. Full sync, encrypted team key sharing
+  and community publishing remain separate milestones. See RESEARCH_CLOUD.md.

@@ -1,56 +1,55 @@
-"use client";
-
 import Link from "next/link";
-import { motion } from "framer-motion";
+import type { ReactNode } from "react";
+import styles from "@/app/tools/ToolsCatalog.module.css";
 
 interface ToolCardProps {
-  icon: React.ReactNode;
+  icon?: ReactNode;
   title: string;
   description: string;
-  status: "coming-soon" | "live";
+  detail?: string;
+  category?: string;
+  number?: number;
+  status?: "coming-soon" | "live";
   href?: string;
+  headingLevel?: 2 | 3;
 }
 
-export function ToolCard({ icon, title, description, status, href }: ToolCardProps) {
+export function ToolCard({
+  icon,
+  title,
+  description,
+  detail,
+  category,
+  number,
+  status = "live",
+  href,
+  headingLevel = 3,
+}: ToolCardProps) {
+  const Heading = headingLevel === 2 ? "h2" : "h3";
   const content = (
     <>
-      <div className="flex items-center justify-between">
-        <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-bg-elevated text-accent">
-          {icon}
-        </div>
-        {status === "coming-soon" ? (
-          <span className="rounded-full border border-white/10 bg-white/[0.08] px-3 py-1 text-xs font-medium text-white/50">
-            Coming Soon
-          </span>
-        ) : (
-          <span className="rounded-full bg-accent/10 px-3 py-1 text-xs font-medium text-accent">
-            Launch
-          </span>
-        )}
+      <span className={styles.rowNumber} aria-hidden="true">
+        {number ? String(number).padStart(2, "0") : icon}
+      </span>
+      <div className={styles.rowContent}>
+        {category && <span className={styles.rowCategory}>{category}</span>}
+        <Heading>{title}</Heading>
+        <p>{description}</p>
+        {detail && <p className={styles.rowDetail}>{detail}</p>}
       </div>
-      <h3 className="font-mono text-lg font-semibold text-text-primary">{title}</h3>
-      <p className="text-sm text-text-secondary leading-relaxed">{description}</p>
+      <span className={styles.rowAction}>
+        <span>{status === "coming-soon" ? "Coming soon" : "Open tool"}</span>
+        {status === "live" && <span className={styles.rowArrow} aria-hidden="true">↗</span>}
+      </span>
     </>
   );
 
-  const motionProps = {
-    whileHover: {
-      scale: 1.02,
-      borderColor: "rgba(0, 212, 170, 0.3)",
-      boxShadow: "0 0 30px rgba(0, 212, 170, 0.1)",
-    },
-    transition: { type: "spring" as const, stiffness: 300, damping: 20 },
-    className:
-      "group relative cursor-pointer rounded-xl border border-border-subtle bg-bg-card p-6 flex flex-col gap-4",
-  };
-
-  if (href) {
-    return (
-      <Link href={href}>
-        <motion.div {...motionProps}>{content}</motion.div>
-      </Link>
-    );
+  if (href && status === "live") {
+    if (href === "/tools/research-workbench") {
+      return <a href={href} className={styles.toolRow}>{content}</a>;
+    }
+    return <Link href={href} className={styles.toolRow}>{content}</Link>;
   }
 
-  return <motion.div {...motionProps}>{content}</motion.div>;
+  return <div className={styles.toolRow}>{content}</div>;
 }

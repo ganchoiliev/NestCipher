@@ -1,11 +1,17 @@
 import { ImageResponse } from "next/og";
+import { readFile } from "node:fs/promises";
+import { join } from "node:path";
 
-export const runtime = "edge";
-export const alt = "NestCipher — Free, Open-Source AI Security Tools";
+export const runtime = "nodejs";
+export const alt =
+  "NestCipher — Look closer. Free tools for security research.";
 export const size = { width: 1200, height: 630 };
 export const contentType = "image/png";
 
-export default function OGImage() {
+export default async function OGImage() {
+  const displayFont = await readFile(
+    join(process.cwd(), "src/assets/BarlowCondensed-Bold.ttf"),
+  );
   return new ImageResponse(
     (
       <div
@@ -14,65 +20,82 @@ export default function OGImage() {
           height: "100%",
           display: "flex",
           flexDirection: "column",
-          alignItems: "center",
-          justifyContent: "center",
-          backgroundColor: "#0A0A12",
-          fontFamily: "monospace",
+          justifyContent: "space-between",
+          backgroundColor: "#0b100d",
+          color: "#f0f3e9",
+          padding: "44px 64px",
+          fontFamily: "Signal",
         }}
       >
-        <div style={{ display: "flex", alignItems: "baseline" }}>
-          <span style={{ fontSize: 72, fontWeight: 700, color: "#F1F1F3" }}>
-            NEST
-          </span>
-          <span style={{ fontSize: 72, fontWeight: 300, color: "#F1F1F3" }}>
-            CIPHER
-          </span>
-        </div>
-        <div
-          style={{
-            fontSize: 28,
-            color: "#00D4AA",
-            marginTop: 20,
-          }}
-        >
-          Free, Open-Source AI Security Tools
-        </div>
-        <div
-          style={{
-            width: 400,
-            height: 1,
-            backgroundColor: "#00D4AA",
-            opacity: 0.3,
-            marginTop: 30,
-          }}
-        />
         <div
           style={{
             display: "flex",
-            gap: 40,
-            marginTop: 40,
-            color: "#6B7280",
-            fontSize: 14,
+            alignItems: "center",
+            justifyContent: "space-between",
+            borderBottom: "1px solid #354336",
+            paddingBottom: 20,
           }}
         >
-          <span>Email Analyzer</span>
-          <span>Headers Scanner</span>
-          <span>OWASP Top 10</span>
-          <span>Injection Tester</span>
-          <span>Content Detector</span>
-          <span>Bias Checker</span>
+          <span style={{ fontSize: 40 }}>
+            NESTCIPHER<span style={{ color: "#c7ff48" }}>/</span>
+          </span>
+          <span style={{ fontSize: 22, color: "#acb6a8" }}>
+            INDEPENDENT TOOLS / OPEN ACCESS
+          </span>
         </div>
         <div
           style={{
-            fontSize: 18,
-            color: "#6B7280",
-            marginTop: 50,
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "space-between",
           }}
         >
-          nestcipher.com
+          <div
+            style={{
+              display: "flex",
+              flexDirection: "column",
+              fontSize: 144,
+              lineHeight: 0.85,
+              letterSpacing: -3,
+            }}
+          >
+            <span>LOOK</span>
+            <span style={{ color: "#c7ff48" }}>CLOSER.</span>
+          </div>
+          <svg width="310" height="310" viewBox="0 0 480 480" fill="none">
+            <g stroke="#c7ff48" strokeWidth="20">
+              <path d="M32 218V32H448V448H32V284" />
+              <path d="M82 218V82H398V398H82V284" />
+              <path d="M132 218V132H348V348H132V284" />
+              <path d="M182 218V182H298V298H182V284" />
+            </g>
+            <path
+              d="M0 250H250m-22-21 22 21-22 21"
+              stroke="#c7ff48"
+              strokeWidth="8"
+            />
+          </svg>
+        </div>
+        <div
+          style={{
+            display: "flex",
+            justifyContent: "space-between",
+            borderTop: "1px solid #354336",
+            paddingTop: 20,
+            color: "#acb6a8",
+            fontSize: 24,
+          }}
+        >
+          <span>EMAIL ANALYSIS / SECURITY HEADERS / LLM RISKS</span>
+          <span>nestcipher.com</span>
         </div>
       </div>
     ),
-    { ...size }
+    {
+      ...size,
+      fonts: [
+        { name: "Signal", data: displayFont, weight: 700, style: "normal" },
+      ],
+    },
   );
 }
