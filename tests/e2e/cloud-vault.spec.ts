@@ -69,11 +69,15 @@ async function load(page: Page, title = "Synthetic saved cloud research") {
 
 async function openLibrary(page: Page) {
   await page.getByRole("button", { name: "Local library", exact: true }).click();
-  return page.getByRole("dialog", { name: "Local vault.", exact: true });
+  const panel = page.getByRole("dialog", { name: "Vault & backup", exact: true });
+  await expect(panel).toBeVisible();
+  await expect(panel.getByText("Checking local storage…", { exact: true })).toHaveCount(0);
+  return panel;
 }
 
 async function createAndSave(page: Page) {
   const panel = await openLibrary(page);
+  await panel.getByRole("button", { name: "Create a new vault", exact: true }).click();
   await panel.getByLabel("New vault passphrase", { exact: true }).fill(phrase);
   await panel.getByLabel("Confirm vault passphrase", { exact: true }).fill(phrase);
   await panel.getByRole("button", { name: "Create vault", exact: true }).click();
@@ -85,6 +89,7 @@ async function createAndSave(page: Page) {
 
 async function backupSaved(page: Page) {
   const panel = await openLibrary(page);
+  if (await panel.getByRole("button", { name: "Restore an existing vault", exact: true }).isVisible()) await panel.getByRole("button", { name: "Restore an existing vault", exact: true }).click();
   await panel.getByRole("button", { name: "Check account", exact: true }).click();
   await expect(panel.getByText("No snapshot saved", { exact: true })).toBeVisible();
   await panel.getByRole("button", { name: "Back up saved vault", exact: true }).click();
@@ -99,6 +104,7 @@ test("local research sends no account requests; requesting a link sends only the
   await createAndSave(page);
   const panel = await openLibrary(page);
   expect(cloud.requests).toEqual([]);
+  if (await panel.getByRole("button", { name: "Restore an existing vault", exact: true }).isVisible()) await panel.getByRole("button", { name: "Restore an existing vault", exact: true }).click();
   await panel.getByRole("button", { name: "Check account", exact: true }).click();
   await panel.getByLabel("Account email", { exact: true }).fill("synthetic@example.test");
   await panel.getByRole("button", { name: "Email sign-in link", exact: true }).click();
@@ -152,6 +158,7 @@ test("cloud restore authenticates locally, rejects a wrong passphrase, and prese
     await load(second, "Different unsaved device draft");
     await second.getByTestId("attempt-input").fill("KEEP_DEVICE_DRAFT");
     const panel = await openLibrary(second);
+    if (await panel.getByRole("button", { name: "Restore an existing vault", exact: true }).isVisible()) await panel.getByRole("button", { name: "Restore an existing vault", exact: true }).click();
     await panel.getByRole("button", { name: "Check account", exact: true }).click();
     await panel.getByLabel("Original vault passphrase", { exact: true }).fill("wrong public synthetic passphrase");
     await panel.getByRole("button", { name: "Restore encrypted backup", exact: true }).click();
@@ -204,6 +211,7 @@ test("a different local vault cannot replace the account snapshot or offer destr
     const fixture = await load(second, "Different local vault");
     await createAndSave(second);
     const panel = await openLibrary(second);
+    if (await panel.getByRole("button", { name: "Restore an existing vault", exact: true }).isVisible()) await panel.getByRole("button", { name: "Restore an existing vault", exact: true }).click();
     await panel.getByRole("button", { name: "Check account", exact: true }).click();
     await expect(panel.getByRole("button", { name: "Back up saved vault", exact: true })).toBeEnabled();
     await expect(panel.getByRole("button", { name: "Restore encrypted backup", exact: true })).toHaveCount(0);
@@ -220,6 +228,7 @@ test("an account change refuses upload and clears stale account actions", async 
   await load(page);
   await createAndSave(page);
   const panel = await openLibrary(page);
+  if (await panel.getByRole("button", { name: "Restore an existing vault", exact: true }).isVisible()) await panel.getByRole("button", { name: "Restore an existing vault", exact: true }).click();
   await panel.getByRole("button", { name: "Check account", exact: true }).click();
   await expect(panel.getByText("No snapshot saved", { exact: true })).toBeVisible();
   cloud.failPut = "account-changed";
@@ -240,6 +249,7 @@ test("locking during a pending upload closes plaintext and ignores a late cloud 
   const waiting = new Promise<void>((resolve) => { release = resolve; });
   cloud.delayPut = () => waiting;
   const panel = await openLibrary(page);
+  if (await panel.getByRole("button", { name: "Restore an existing vault", exact: true }).isVisible()) await panel.getByRole("button", { name: "Restore an existing vault", exact: true }).click();
   await panel.getByRole("button", { name: "Check account", exact: true }).click();
   await panel.getByRole("button", { name: "Back up saved vault", exact: true }).click();
   await expect.poll(() => cloud.requests.some((request) => request.method === "PUT")).toBe(true);
@@ -262,6 +272,7 @@ test("closing the library during a pending upload keeps the unsaved draft and do
   const waiting = new Promise<void>((resolve) => { release = resolve; });
   cloud.delayPut = () => waiting;
   const panel = await openLibrary(page);
+  if (await panel.getByRole("button", { name: "Restore an existing vault", exact: true }).isVisible()) await panel.getByRole("button", { name: "Restore an existing vault", exact: true }).click();
   await panel.getByRole("button", { name: "Check account", exact: true }).click();
   await panel.getByRole("button", { name: "Back up saved vault", exact: true }).click();
   await expect.poll(() => cloud.requests.some((request) => request.method === "PUT")).toBe(true);
@@ -274,7 +285,7 @@ test("closing the library during a pending upload keeps the unsaved draft and do
   await expect(page.getByRole("dialog")).toHaveCount(0);
 });
 
-for (const cancellation of ["sign-out", "close"] as const) {
+for (const cancellation of ["sign-out", "close", "choices"] as const) {
   test(`${cancellation} during restore key derivation leaves no local vault installed`, async ({ page, browser }) => {
     const originalCloud = await mockCloud(page);
     await load(page);
@@ -296,6 +307,7 @@ for (const cancellation of ["sign-out", "close"] as const) {
       await mockCloud(second, originalCloud.snapshot!);
       await load(second, "Draft retained through restore cancellation");
       const panel = await openLibrary(second);
+      if (await panel.getByRole("button", { name: "Restore an existing vault", exact: true }).isVisible()) await panel.getByRole("button", { name: "Restore an existing vault", exact: true }).click();
       await panel.getByRole("button", { name: "Check account", exact: true }).click();
       await panel.getByLabel("Original vault passphrase", { exact: true }).fill(phrase);
       await panel.getByRole("button", { name: "Restore encrypted backup", exact: true }).click();
@@ -303,6 +315,9 @@ for (const cancellation of ["sign-out", "close"] as const) {
       if (cancellation === "sign-out") {
         await panel.getByRole("button", { name: "Sign out", exact: true }).click();
         await expect(panel.getByRole("status").filter({ hasText: "Signed out" })).toBeVisible();
+      } else if (cancellation === "choices") {
+        await panel.getByRole("button", { name: "Back to choices", exact: true }).click();
+        await expect(panel.getByLabel("Original vault passphrase", { exact: true })).toHaveCount(0);
       } else await panel.getByRole("button", { name: "Close library", exact: true }).click();
       await expect.poll(() => second.evaluate(() => (window as Window & { syntheticCloudKdfFinished?: boolean }).syntheticCloudKdfFinished)).toBe(true);
       const installed = await second.evaluate(() => new Promise<boolean>((resolve, reject) => {
@@ -317,7 +332,7 @@ for (const cancellation of ["sign-out", "close"] as const) {
         };
       }));
       expect(installed).toBe(false);
-      if (cancellation === "sign-out") await panel.getByRole("button", { name: "Close library", exact: true }).click();
+      if (cancellation !== "close") await panel.getByRole("button", { name: "Close library", exact: true }).click();
       await expect(second.getByTestId("experiment-title")).toHaveValue("Draft retained through restore cancellation");
       await expect(second.getByTestId("storage-status")).toHaveText("Session only");
     } finally { await context.close(); }

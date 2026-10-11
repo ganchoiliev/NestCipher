@@ -103,6 +103,30 @@ describe("encrypted local research vault", () => {
     expect(key.algorithm).toMatchObject({ name: "AES-GCM", length: 256 });
   });
 
+  it("reads all saved research as one authenticated snapshot without repeated decryption or writes", async () => {
+    const session = keep(await createResearchVault(PASSPHRASE));
+    const first = fixture();
+    const second = fixture();
+    const firstSummary = await session.save(first, null);
+    const secondSummary = await session.save(second, null);
+    const before = await rawRead("records");
+    const decrypt = vi.spyOn(crypto.subtle, "decrypt");
+    const records = await session.readAll();
+    expect(records).toHaveLength(2);
+    expect(records).toEqual(expect.arrayContaining([
+      { experiment: first, summary: firstSummary }, { experiment: second, summary: secondSummary },
+    ]));
+    expect(records.map((record) => record.summary.savedAt)).toEqual(
+      [firstSummary.savedAt, secondSummary.savedAt].sort((a, b) => b.localeCompare(a)),
+    );
+    expect(decrypt).toHaveBeenCalledTimes(2);
+    expect(await rawRead("records")).toEqual(before);
+    records[0].experiment.title = "Changed only in this returned object";
+    expect((await session.open(records[0].summary.id)).experiment.title).toBe(first.title);
+    session.lock();
+    await expect(session.readAll()).rejects.toMatchObject({ code: "locked" });
+  });
+
   it("generates a fresh IV and opaque token for every record and replacement", async () => {
     const session = keep(await createResearchVault(PASSPHRASE));
     const first = fixture();
@@ -209,6 +233,7 @@ describe("encrypted local research vault", () => {
     }
     await rawWrite("records", record);
     await expect(session.list()).rejects.toMatchObject({ code: "invalid-vault" });
+    await expect(session.readAll()).rejects.toMatchObject({ code: "invalid-vault" });
     await expect(session.save(experiment, 1)).rejects.toMatchObject({ code: "invalid-vault" });
   });
 
@@ -346,7 +371,7 @@ describe("encrypted local research vault", () => {
     expect((await unlocked.open(experiment.id)).summary.revision).toBe(1);
   });
 
-  it("does not return decrypted content after a pending read was locked", async () => {
+  it.each(["open", "readAll"] as const)("does not return decrypted content after pending %s was locked", async (method) => {
     const session = keep(await createResearchVault(PASSPHRASE));
     const experiment = fixture();
     await session.save(experiment, null);
@@ -361,7 +386,7 @@ describe("encrypted local research vault", () => {
       await barrier;
       return result;
     });
-    const opening = session.open(experiment.id);
+    const opening = method === "open" ? session.open(experiment.id) : session.readAll();
     const rejected = expect(opening).rejects.toMatchObject({ code: "locked" });
     await entered;
     session.lock();

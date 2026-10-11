@@ -42,6 +42,8 @@ Status colours remain separate tokens and pair with written labels. Keep danger,
 
 ## Accessibility and resilience
 
+Saved research now has a full-width Workbench library view, separate from vault setup. Use the same quiet evidence typography for local full-text search, tag/target filters, manual review labels and explicit selection. Keep working drafts separate from saved revisions. A linked Obsidian pack is prepared only on Preview, with per-field omissions, a filename list and inert text preview before download. ZIP exports are readable private files. Create and restore paths show separate passphrase forms; account sign-in never substitutes for the original vault passphrase.
+
 Controls use 44px minimum touch dimensions where applicable; main actions use 48–56px height. Focus uses a 3px accent outline with offset. Native source disclosure works before JavaScript; initial evidence and OWASP reference summaries render on the server. Selected state is exposed through aria-pressed, errors through alerts and findings through polite live regions.
 
 Use short colour/border transitions and honour reduced motion. Preserve the nonce CSP, existing input validation, BotID, SSRF safeguards, rate limits and API schemas.

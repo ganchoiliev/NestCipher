@@ -10,6 +10,7 @@ type Account = { configured: boolean; user: { id: string; email: string | null }
 type BackupMetadata = { revision: string; vaultId: string; updatedAt: string; sizeBytes: number; recordCount: number };
 type Operation = "account" | "email" | "sign-out" | "backup" | "restore" | "download" | "delete";
 type Props = {
+  intent?: "backup" | "restore";
   session: ResearchVaultSession | null;
   localVaultExists: boolean | null;
   onRestored: (session: ResearchVaultSession) => void;
@@ -53,7 +54,7 @@ function backupResponse(value: unknown): BackupMetadata | null {
 
 function dateLabel(value: string) { return new Date(value).toISOString().replace("T", " ").replace(/\.\d{3}Z$/, " UTC"); }
 
-export function CloudVaultPanel({ session, localVaultExists, onRestored, onBusy, onAccountVerified }: Props) {
+export function CloudVaultPanel({ intent = "backup", session, localVaultExists, onRestored, onBusy, onAccountVerified }: Props) {
   const [account, setAccount] = useState<Account | null>(null);
   const [backup, setBackup] = useState<BackupMetadata | null | undefined>(undefined);
   const [email, setEmail] = useState("");
@@ -71,6 +72,7 @@ export function CloudVaultPanel({ session, localVaultExists, onRestored, onBusy,
   const live = useRef(true);
   const sessionRef = useRef(session);
   const callbacks = useRef({ onRestored, onBusy, onAccountVerified });
+  const restoring = intent === "restore" && !session && localVaultExists === false;
   useLayoutEffect(() => {
     sessionRef.current = session;
     callbacks.current = { onRestored, onBusy, onAccountVerified };
@@ -182,7 +184,7 @@ export function CloudVaultPanel({ session, localVaultExists, onRestored, onBusy,
         const metadata = backupResponse(await request(`/api/research/backup?expectedUserId=${encodeURIComponent(checked.user.id)}`, task.abort.signal));
         if (!task.valid()) return;
         setBackup(metadata);
-        setStatus(metadata ? "Cloud status refreshed. No research was uploaded." : "No cloud backup yet. Uploading is a separate action.");
+        setStatus(metadata ? "Cloud status refreshed. No research was uploaded." : restoring ? "No encrypted backup was found for this account. Go Back to choices to create a new vault if you are starting here." : "No cloud backup yet. Uploading is a separate action.");
       } else setStatus(checked.configured ? "Sign in to use optional encrypted backup. Your local vault works independently." : "Cloud backup has not been configured on this instance. Local research remains available.");
     } catch (reason) { if (task.valid()) report(reason); }
     finally { finish(task.current); }
@@ -311,8 +313,8 @@ export function CloudVaultPanel({ session, localVaultExists, onRestored, onBusy,
 
   const busy = operation !== null;
   return <section className={styles.panel} aria-labelledby="cloud-backup-heading">
-    <div className={styles.heading}><div><p className="eyebrow">Optional / encrypted backup</p><h3 id="cloud-backup-heading">Carry your vault.</h3></div><span className={styles.badge}>Explicit upload</span></div>
-    <p className={styles.intro}>Back up saved vault records to your account. Encryption happens in this browser. Your vault passphrase and unsaved working draft stay on this device.</p>
+    <div className={styles.heading}><div><p className="eyebrow">{restoring ? "Cloud / encrypted restore" : "Optional / encrypted backup"}</p><h3 id="cloud-backup-heading">{restoring ? "Find your cloud copy." : "Carry your vault."}</h3></div><span className={styles.badge}>{restoring ? "Original passphrase" : "Explicit upload"}</span></div>
+    <p className={styles.intro}>{restoring ? "Sign in to the account used for your backup, then unlock it with the vault passphrase you chose when it was created." : "Back up saved vault records to your account. Encryption happens in this browser. Your vault passphrase and unsaved working draft stay on this device."}</p>
     <div className={styles.actions}><button type="button" className="button-secondary" onClick={() => void checkAccount()} disabled={busy}>{operation === "account" ? "Checking…" : account?.user ? "Refresh cloud status" : "Check account"}</button>{account?.user && <button type="button" className={styles.textButton} onClick={() => void signOut()} disabled={operation === "sign-out"}>{operation === "sign-out" ? "Signing out…" : "Sign out"}</button>}</div>
     {account?.configured === false && <p className={styles.note}>This instance is not connected to cloud backup. You can still save locally and download private experiment files.</p>}
     {account?.configured && !account.user && <form className={styles.form} onSubmit={(event) => void sendLink(event)}>
@@ -327,10 +329,10 @@ export function CloudVaultPanel({ session, localVaultExists, onRestored, onBusy,
         {confirmBackup ? <div className={styles.confirm}><h4>Replace the cloud snapshot?</h4><p>The saved records currently in this browser will replace the backup from {backup ? dateLabel(backup.updatedAt) : "your account"}. This is a snapshot, so newer records from another device are not merged.</p><div className={styles.actions}><button type="button" className="button-secondary" onClick={() => setConfirmBackup(false)} disabled={busy}>Keep cloud copy</button><button type="button" className="button-primary" onClick={() => void upload()} disabled={busy}>Replace with saved local vault</button></div></div>
           : <button type="button" className="button-primary" disabled={busy || backup === undefined} onClick={() => backup ? setConfirmBackup(true) : void upload()}>{operation === "backup" ? "Backing up…" : "Back up saved vault"}</button>}
         <p className={styles.help}>Save your experiment locally first. One vault snapshot per account, up to 3 MiB. Full local vaults can be larger.</p>
-      </div> : <p className={styles.note}>{localVaultExists ? "Unlock your local vault above to back it up. Restoring never replaces an existing browser vault." : "Create a local vault to begin saving, or restore your cloud snapshot below."}</p>}
-      {backup && <div className={styles.actions}><button type="button" className="button-secondary" onClick={() => void downloadCloud()} disabled={busy}>{operation === "download" ? "Downloading…" : "Download encrypted cloud archive"}</button><button type="button" className={styles.deleteButton} onClick={() => { setConfirmDelete(true); setConfirmBackup(false); }} disabled={busy}>{operation === "delete" ? "Deleting…" : "Delete cloud backup"}</button></div>}
+      </div> : !restoring && <p className={styles.note}>{localVaultExists ? "Unlock your local vault above to back it up. Restoring never replaces an existing browser vault." : "Create a local vault to begin saving, or restore your cloud snapshot below."}</p>}
+      {backup && !restoring && <div className={styles.actions}><button type="button" className="button-secondary" onClick={() => void downloadCloud()} disabled={busy}>{operation === "download" ? "Downloading…" : "Download encrypted cloud archive"}</button><button type="button" className={styles.deleteButton} onClick={() => { setConfirmDelete(true); setConfirmBackup(false); }} disabled={busy}>{operation === "delete" ? "Deleting…" : "Delete cloud backup"}</button></div>}
       {backup && confirmDelete && <div className={styles.confirm}><h4>Delete cloud backup?</h4><p>This removes the encrypted snapshot from your account. Your local vault and working draft are retained. Download an encrypted archive first if you need another copy.</p><div className={styles.actions}><button type="button" className="button-secondary" onClick={() => setConfirmDelete(false)} disabled={busy}>Keep cloud backup</button><button type="button" className={styles.deleteButton} onClick={() => void deleteCloud()} disabled={busy}>Delete this cloud snapshot</button></div></div>}
-      {backup && !session && localVaultExists === false && <form className={styles.restore} onSubmit={(event) => void restore(event)}><h4>Restore on this device</h4><p>This creates a local vault only when none exists. The downloaded snapshot is authenticated and decrypted here.</p><label htmlFor="cloud-restore-passphrase">Original vault passphrase</label><input id="cloud-restore-passphrase" type="password" autoComplete="current-password" value={passphrase} onChange={(event) => setPassphrase(event.target.value)} disabled={busy} required aria-describedby="cloud-restore-help" /><p id="cloud-restore-help" className={styles.help}>Your passphrase is used locally and never sent with the request.</p><button type="submit" className="button-primary" disabled={busy || passphrase.length < 16}>{operation === "restore" ? "Restoring…" : "Restore encrypted backup"}</button></form>}
+      {backup && !session && localVaultExists === false && <form className={styles.restore} onSubmit={(event) => void restore(event)}><h4>Restore on this device</h4><p>Use the original vault passphrase, separate from your email or account sign-in. This creates a local vault only when none exists.</p><label htmlFor="cloud-restore-passphrase">Original vault passphrase</label><input id="cloud-restore-passphrase" type="password" autoComplete="current-password" value={passphrase} onChange={(event) => setPassphrase(event.target.value)} disabled={busy} required aria-describedby="cloud-restore-help" /><p id="cloud-restore-help" className={styles.help}>Your passphrase is used locally and never sent with the request. Account recovery cannot recover this passphrase.</p><button type="submit" className="button-primary" disabled={busy || passphrase.length < 16}>{operation === "restore" ? "Restoring…" : "Restore encrypted backup"}</button></form>}
     </>}
     {error && <p role="alert" className={styles.error}>{error}</p>}
     <p role="status" aria-live="polite" className={styles.status}>{status}</p>

@@ -127,8 +127,9 @@ test("field checks expose missing snapshot context without altering researcher a
 test("review does not autosave an edited encrypted-vault draft", async ({ page }) => {
   await load(page);
   await page.getByRole("button", { name: "Local library", exact: true }).click();
-  const library = page.getByRole("dialog", { name: "Local vault.", exact: true });
+  const library = page.getByRole("dialog", { name: "Vault & backup", exact: true });
   const phrase = "public review vault fixture passphrase";
+  await library.getByRole("button", { name: "Create a new vault", exact: true }).click();
   await library.getByLabel("New vault passphrase", { exact: true }).fill(phrase);
   await library.getByLabel("Confirm vault passphrase", { exact: true }).fill(phrase);
   await library.getByRole("button", { name: "Create vault", exact: true }).click();
@@ -165,10 +166,12 @@ test("empty experiments and narrow keyboard filtering remain usable", async ({ p
       const rectangle = element.getBoundingClientRect();
       return { width: rectangle.width, height: rectangle.height, top: rectangle.top, bottom: rectangle.bottom };
     }));
-    expect(tabs).toHaveLength(4);
+    expect(tabs).toHaveLength(5);
+    const researchTabs = tabs.slice(0, 4);
+    expect(tabs[4].top).toBeGreaterThan(Math.max(...researchTabs.map((tab) => tab.bottom)));
     expect(tabs.every((tab) => tab.width >= 44 && tab.height >= 44)).toBe(true);
-    expect(Math.max(...tabs.map((tab) => tab.top)) - Math.min(...tabs.map((tab) => tab.top))).toBeLessThan(1);
-    expect(Math.max(...tabs.map((tab) => tab.width)) - Math.min(...tabs.map((tab) => tab.width))).toBeLessThan(1);
+    expect(Math.max(...researchTabs.map((tab) => tab.top)) - Math.min(...researchTabs.map((tab) => tab.top))).toBeLessThan(1);
+    expect(Math.max(...researchTabs.map((tab) => tab.width)) - Math.min(...researchTabs.map((tab) => tab.width))).toBeLessThan(1);
     const newAttempt = await page.getByRole("button", { name: /^New attempt/ }).boundingBox();
     expect(newAttempt!.y).toBeGreaterThan(Math.max(...tabs.map((tab) => tab.bottom)));
     expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true);

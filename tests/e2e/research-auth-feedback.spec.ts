@@ -10,7 +10,7 @@ test("a sign-in return opens the library but confirms identity only after an exp
     await route.fulfill({ contentType: "application/json", body: JSON.stringify({ configured: true, user: null }) });
   });
   await page.goto(`${workbench}?account=connected`);
-  const library = page.getByRole("dialog", { name: "Local vault.", exact: true });
+  const library = page.getByRole("dialog", { name: "Vault & backup", exact: true });
   await expect(library).toBeVisible();
   await expect(library.getByRole("status").filter({ hasText: "Continue signing in" })).toBeVisible();
   await expect(library.getByText(/^Signed in ·/)).toHaveCount(0);
@@ -32,21 +32,22 @@ test("a verified account check clears the sign-in navigation hint without unlock
     await route.fulfill({ contentType: "application/json", body: JSON.stringify(response) });
   });
   await page.goto(`${workbench}?account=connected`);
-  const library = page.getByRole("dialog", { name: "Local vault.", exact: true });
+  const library = page.getByRole("dialog", { name: "Vault & backup", exact: true });
   await expect(library.getByText(/^Continue signing in\./)).toBeVisible();
   expect(requested).toEqual([]);
   await library.getByRole("button", { name: "Check account", exact: true }).click();
   await expect(library.getByText("Signed in · synthetic@example.test", { exact: true })).toBeVisible();
   await expect(library.getByText("No snapshot saved", { exact: true })).toBeVisible();
   await expect(library.getByText(/^Continue signing in\./)).toHaveCount(0);
-  await expect(library.getByRole("button", { name: "Create vault", exact: true })).toBeVisible();
+  await expect(library.getByRole("button", { name: "Back to choices", exact: true })).toBeVisible();
+  await expect(library.getByLabel("New vault passphrase", { exact: true })).toHaveCount(0);
   expect(requested).toEqual(["/api/research/account", "/api/research/backup"]);
 });
 
 test("a failed account check preserves the sign-in recovery hint", async ({ page }) => {
   await page.route("**/api/research/account", (route) => route.fulfill({ status: 503, contentType: "application/json", body: JSON.stringify({ error: "Synthetic unavailable account" }) }));
   await page.goto(`${workbench}?account=connected`);
-  const library = page.getByRole("dialog", { name: "Local vault.", exact: true });
+  const library = page.getByRole("dialog", { name: "Vault & backup", exact: true });
   await library.getByRole("button", { name: "Check account", exact: true }).click();
   await expect(library.getByRole("alert")).toBeVisible();
   await expect(library.getByText(/^Continue signing in\./)).toBeVisible();
@@ -57,7 +58,7 @@ test("expired sign-in hints explain recovery while duplicate or unsupported quer
   const requested: string[] = [];
   page.on("request", (request) => { if (/\/api\//.test(request.url())) requested.push(request.url()); });
   await page.goto(`${workbench}?account=error`);
-  const library = page.getByRole("dialog", { name: "Local vault.", exact: true });
+  const library = page.getByRole("dialog", { name: "Vault & backup", exact: true });
   await expect(library.getByRole("alert")).toContainText("sign-in link could not be completed");
   await expect(library.getByRole("alert")).toContainText("latest email");
   expect(requested).toEqual([]);
@@ -79,7 +80,8 @@ test("a rate-limited email request shows safe feedback and prevents immediate re
   });
   await page.goto(workbench);
   await page.getByRole("button", { name: "Local library", exact: true }).click();
-  const library = page.getByRole("dialog", { name: "Local vault.", exact: true });
+  const library = page.getByRole("dialog", { name: "Vault & backup", exact: true });
+  await library.getByRole("button", { name: "Restore an existing vault", exact: true }).click();
   await library.getByRole("button", { name: "Check account", exact: true }).click();
   await library.getByLabel("Account email", { exact: true }).fill("synthetic@example.test");
   await library.getByRole("button", { name: "Email sign-in link", exact: true }).click();

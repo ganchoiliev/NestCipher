@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useMemo, useRef, useState, type FormEvent } from "react";
+import { useEffect, useRef, useState, type FormEvent } from "react";
 import {
   createResearchVault,
   inspectResearchVault,
@@ -25,6 +25,8 @@ interface Props {
   initialAccountStatus?: ResearchAccountReturnStatus;
 }
 
+type SetupPath = "choose" | "create" | "restore";
+
 export function ResearchVaultPanel({ open, session, refresh, onClose, onUnlocked, onOpenExperiment, onDeleted, onLock, initialAccountStatus }: Props) {
   const dialog = useRef<HTMLDialogElement>(null);
   const [exists, setExists] = useState<boolean | null>(null);
@@ -37,15 +39,19 @@ export function ResearchVaultPanel({ open, session, refresh, onClose, onUnlocked
   const [deleting, setDeleting] = useState<SavedExperimentSummary | null>(null);
   const [cloudBusy, setCloudBusy] = useState(false);
   const [accountReturnResolved, setAccountReturnResolved] = useState(false);
-  const [search, setSearch] = useState("");
-  const visibleRecords = useMemo(() => {
-    const query = search.trim().toLocaleLowerCase();
-    return query ? records.filter((record) => (record.title || "Untitled experiment").toLocaleLowerCase().includes(query)) : records;
-  }, [records, search]);
+  const [setupPath, setSetupPath] = useState<SetupPath>(initialAccountStatus ? "restore" : "choose");
+  const pathHeading = useRef<HTMLHeadingElement>(null);
+  const cloudVisible = open && (Boolean(session) || exists === true || (exists === false && setupPath === "restore"));
 
   useEffect(() => {
     if (open && dialog.current && !dialog.current.open) dialog.current.showModal();
     if (!open && dialog.current?.open) dialog.current.close();
+    return () => {
+      if (open) {
+        setPassphrase("");
+        setConfirmation("");
+      }
+    };
   }, [open]);
 
   useEffect(() => {
@@ -60,7 +66,21 @@ export function ResearchVaultPanel({ open, session, refresh, onClose, onUnlocked
       if (live) setError(reason instanceof Error ? reason.message : "The local vault could not be read. Your working draft is unchanged.");
     });
     return () => { live = false; };
-  }, [open, session, refresh]);
+  }, [open, session, refresh, setupPath]);
+
+  function choosePath(next: SetupPath) {
+    if (busy) return;
+    setPassphrase("");
+    setConfirmation("");
+    setDeleting(null);
+    setError("");
+    setStatus("");
+    setCloudBusy(false);
+    setSetupPath(next);
+    window.requestAnimationFrame(() => {
+      if (dialog.current?.open) pathHeading.current?.focus();
+    });
+  }
 
   function close() {
     if (busy) return;
@@ -69,12 +89,13 @@ export function ResearchVaultPanel({ open, session, refresh, onClose, onUnlocked
     setDeleting(null);
     setError("");
     setStatus("");
+    setSetupPath("choose");
     onClose();
   }
 
   async function unlock(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
-    if (busy || cloudBusy || exists === null) return;
+    if (busy || cloudBusy || exists === null || (!exists && setupPath !== "create")) return;
     const entered = passphrase;
     const matches = entered === confirmation;
     setPassphrase("");
@@ -91,7 +112,7 @@ export function ResearchVaultPanel({ open, session, refresh, onClose, onUnlocked
       onUnlocked(unlocked);
       setExists(true);
       setRecords(await unlocked.list());
-      setStatus("Vault unlocked for this page. Saving an experiment is a separate action.");
+      setStatus(exists ? "Vault unlocked for this page. Saving an experiment is a separate action." : "Vault created and unlocked for this page. Saving an experiment is a separate action.");
     } catch (reason) {
       setError(reason instanceof Error ? reason.message : "The vault could not be unlocked. Your draft is unchanged.");
     } finally { setBusy(false); }
@@ -133,25 +154,36 @@ export function ResearchVaultPanel({ open, session, refresh, onClose, onUnlocked
   }
 
   return <dialog ref={dialog} className={styles.panel} aria-labelledby="vault-heading" onCancel={(event) => { event.preventDefault(); close(); }}>
-    <div className={styles.header}><div><p className="eyebrow">Private / this browser</p><h2 id="vault-heading">Local vault.</h2></div><button type="button" className="button-secondary" onClick={close} disabled={busy}>Close library</button></div>
-    <p className={styles.intro}>Save selected experiments in this browser, encrypted with your passphrase. Keep downloaded copies, or opt into a separate encrypted cloud backup below.</p>
-    {initialAccountStatus && !accountReturnResolved && <p role={initialAccountStatus === "error" ? "alert" : "status"} className={initialAccountStatus === "error" ? styles.error : styles.status}>{researchAccountReturnNotice(initialAccountStatus)}</p>}
+    <div className={styles.header}><div><p className="eyebrow">Private / this browser</p><h2 id="vault-heading">Vault &amp; backup</h2></div><button type="button" className="button-secondary" onClick={close} disabled={busy}>Close library</button></div>
+    <p className={styles.intro}>{session ? "Manage your saved vault and its optional encrypted account backup. Saving and backing up are separate actions." : exists ? "Your saved research is encrypted in this browser. Unlock it with its vault passphrase; account sign-in is a separate step." : "Keep saved research encrypted in this browser. Create a vault here, or bring an existing encrypted backup onto this device."}</p>
+    {initialAccountStatus && !accountReturnResolved && cloudVisible && <p role={initialAccountStatus === "error" ? "alert" : "status"} className={initialAccountStatus === "error" ? styles.error : styles.status}>{researchAccountReturnNotice(initialAccountStatus)}</p>}
     {error && <p role="alert" className={styles.error}>{error}</p>}
     <p role="status" aria-live="polite" className={styles.status}>{status}</p>
     {session ? <>
       <div className={styles.libraryBar}><span>Unlocked · {records.length} saved {records.length === 1 ? "experiment" : "experiments"}</span><button type="button" className="button-secondary" onClick={() => { if (!busy) { onClose(); onLock(); } }} disabled={busy}>Lock vault</button></div>
       {deleting ? <section className={styles.confirm} aria-labelledby="delete-saved-heading"><h3 id="delete-saved-heading">Delete this saved copy?</h3><p>{deleting.title || "Untitled experiment"}</p><p>This permanently removes its saved record from this browser. An open draft remains in memory. Download a private experiment JSON backup before deleting a copy you need to keep.</p><div className={styles.actions}><button type="button" className="button-secondary" onClick={() => setDeleting(null)} disabled={busy}>Keep saved copy</button><button type="button" className="button-primary" onClick={() => void deleteRecord()} disabled={busy || cloudBusy}>Delete saved copy</button></div></section> : null}
-      {records.length > 0 && <div className={styles.search}><label htmlFor="vault-library-search">Find a saved experiment by title</label><div><input id="vault-library-search" type="search" value={search} onChange={(event) => setSearch(event.target.value)} autoComplete="off" spellCheck={false} /><button type="button" className="button-secondary" onClick={() => setSearch("")} disabled={!search}>Clear</button></div></div>}
-      {visibleRecords.length ? <ul className={styles.records}>{visibleRecords.map((record) => <li key={record.id}><div><h3>{record.title || "Untitled experiment"}</h3><p>{record.attemptCount} {record.attemptCount === 1 ? "attempt" : "attempts"} · Saved {record.savedAt.replace("T", " ").replace(".000Z", " UTC")} · Revision {record.revision}</p></div><div className={styles.actions}><button type="button" className="button-secondary" onClick={() => void openRecord(record.id)} disabled={busy} aria-label={`Open saved experiment ${record.title || "Untitled experiment"}`}>Open</button><button type="button" className={styles.delete} onClick={() => setDeleting(record)} disabled={busy || cloudBusy} aria-label={`Delete saved experiment ${record.title || "Untitled experiment"}`}>Delete</button></div></li>)}</ul> : <p className={styles.empty}>{records.length ? "No saved titles match this search. Clear the search to see every saved experiment." : "No saved experiments yet. Close the library, then choose Save locally on your working draft."}</p>}
-    </> : exists === null ? <p className={styles.empty}>Checking local storage…</p> : <form onSubmit={(event) => void unlock(event)} className={styles.form}>
-      <h3>{exists ? "Unlock your vault" : "Create a local vault"}</h3>
+      {records.length ? <ul className={styles.records}>{records.map((record) => <li key={record.id}><div><h3>{record.title || "Untitled experiment"}</h3><p>{record.attemptCount} {record.attemptCount === 1 ? "attempt" : "attempts"} · Saved {record.savedAt.replace("T", " ").replace(".000Z", " UTC")} · Revision {record.revision}</p></div><div className={styles.actions}><button type="button" className="button-secondary" onClick={() => void openRecord(record.id)} disabled={busy} aria-label={`Open saved experiment ${record.title || "Untitled experiment"}`}>Open</button><button type="button" className={styles.delete} onClick={() => setDeleting(record)} disabled={busy || cloudBusy} aria-label={`Delete saved experiment ${record.title || "Untitled experiment"}`}>Delete</button></div></li>)}</ul> : <p className={styles.empty}>No saved experiments yet. Close the library, then choose Save locally on your working draft.</p>}
+    </> : exists === null ? <p className={styles.empty}>Checking local storage…</p> : exists || setupPath === "create" ? <form onSubmit={(event) => void unlock(event)} className={styles.form}>
+      {!exists && <button type="button" className={styles.backButton} onClick={() => choosePath("choose")} disabled={busy}>Back to choices</button>}
+      <h3 ref={pathHeading} tabIndex={-1}>{exists ? "Unlock your vault" : "Create a new vault"}</h3>
       <p>{exists ? "Saved titles and contents remain hidden until you enter the passphrase." : "Choose a passphrase you can keep safely. A forgotten passphrase cannot be recovered; there is no reset or recovery service."}</p>
       <label htmlFor="vault-passphrase">{exists ? "Vault passphrase" : "New vault passphrase"}</label><input id="vault-passphrase" type="password" autoComplete={exists ? "current-password" : "new-password"} value={passphrase} onChange={(event) => setPassphrase(event.target.value)} disabled={busy || cloudBusy} aria-describedby="vault-passphrase-help" />
       {!exists && <><label htmlFor="vault-confirmation">Confirm vault passphrase</label><input id="vault-confirmation" type="password" autoComplete="new-password" value={confirmation} onChange={(event) => setConfirmation(event.target.value)} disabled={busy || cloudBusy} /></>}
       <p id="vault-passphrase-help" className={styles.help}>At least 16 characters, up to 1,024 UTF-8 bytes. Spaces are preserved. This protects stored content; it does not protect an unlocked page or compromised device.</p>
       <button type="submit" className="button-primary" disabled={busy || cloudBusy || !passphrase.length}>{busy ? "Working…" : exists ? "Unlock vault" : "Create vault"}</button>
-    </form>}
+    </form> : setupPath === "choose" ? <section className={styles.setup} aria-labelledby="vault-path-heading">
+      <h3 id="vault-path-heading" ref={pathHeading} tabIndex={-1}>How would you like to start?</h3>
+      <p>No local vault exists in this browser. Choose one path to continue.</p>
+      <div className={styles.choices}>
+        <button type="button" className={styles.choice} aria-label="Create a new vault" onClick={() => choosePath("create")}><span className={styles.choiceLabel}>Create a new vault</span><span>Start saving on this device with a new passphrase. No account is needed.</span><span className={styles.choiceAction}>Start here <span aria-hidden="true">↗</span></span></button>
+        <button type="button" className={styles.choice} aria-label="Restore an existing vault" onClick={() => choosePath("restore")}><span className={styles.choiceLabel}>Restore an existing vault</span><span>Sign in to find your encrypted cloud backup, then use its original vault passphrase.</span><span className={styles.choiceAction}>Bring your research <span aria-hidden="true">↗</span></span></button>
+      </div>
+    </section> : <section className={styles.restoreIntro} aria-labelledby="vault-restore-heading">
+      <button type="button" className={styles.backButton} onClick={() => choosePath("choose")}>Back to choices</button>
+      <h3 id="vault-restore-heading" ref={pathHeading} tabIndex={-1}>Restore an existing vault</h3>
+      <p>Check the account holding your backup. You will need the original vault passphrase to unlock it here; account sign-in cannot recover that passphrase.</p>
+    </section>}
     <p className={styles.help}>Browser data can be cleared or evicted. Vault saving is explicit; typing, unlocking and opening records do not save changes automatically.</p>
-    {open && <CloudVaultPanel session={session} localVaultExists={session ? true : exists} onRestored={cloudRestored} onBusy={setCloudBusy} onAccountVerified={() => setAccountReturnResolved(true)} />}
+    {cloudVisible && <CloudVaultPanel intent={!session && exists === false ? "restore" : "backup"} session={session} localVaultExists={session ? true : exists} onRestored={cloudRestored} onBusy={setCloudBusy} onAccountVerified={() => setAccountReturnResolved(true)} />}
   </dialog>;
 }

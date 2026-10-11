@@ -2,9 +2,11 @@
 
 Public tools and the local Research Workbench work without an account. This
 phase adds explicit account backup/restore, not automatic cross-device sync or
-shared research. The Local library also searches saved titles locally while
-unlocked. Opening the library does not contact an account service; Check account
-starts that request.
+shared research. The Research library searches saved titles, metadata and evidence
+locally while unlocked, with tag, historical target and manual review filters.
+Opening the library does not contact an account service; Check account starts
+that request. Vault setup now separates creating a new vault from restoring an
+existing cloud copy. See [the library workflow](RESEARCH_LIBRARY.md).
 
 ## Data boundary
 

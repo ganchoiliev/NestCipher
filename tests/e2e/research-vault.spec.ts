@@ -20,7 +20,8 @@ async function load(page: Page) {
 
 async function createVault(page: Page) {
   await page.getByRole("button", { name: "Local library", exact: true }).click();
-  const panel = page.getByRole("dialog", { name: "Local vault.", exact: true });
+  const panel = page.getByRole("dialog", { name: "Vault & backup", exact: true });
+  await panel.getByRole("button", { name: "Create a new vault", exact: true }).click();
   await panel.getByLabel("New vault passphrase", { exact: true }).fill(phrase);
   await panel.getByLabel("Confirm vault passphrase", { exact: true }).fill(phrase);
   await panel.getByRole("button", { name: "Create vault", exact: true }).click();
@@ -30,7 +31,7 @@ async function createVault(page: Page) {
 
 async function unlock(page: Page, passphrase = phrase) {
   await page.getByRole("button", { name: "Local library", exact: true }).click();
-  const panel = page.getByRole("dialog", { name: "Local vault.", exact: true });
+  const panel = page.getByRole("dialog", { name: "Vault & backup", exact: true });
   await panel.getByLabel("Vault passphrase", { exact: true }).fill(passphrase);
   await panel.getByRole("button", { name: "Unlock vault", exact: true }).click();
   return panel;
@@ -83,7 +84,7 @@ test("lock offers save/download/discard; cancelling and deleting saved copy keep
   await confirmation.getByRole("button", { name: "Keep current session", exact: true }).click();
   await expect(page.getByTestId("attempt-input")).toHaveValue("Newer synthetic draft");
   await page.getByRole("button", { name: "Local library", exact: true }).click();
-  const panel = page.getByRole("dialog", { name: "Local vault.", exact: true });
+  const panel = page.getByRole("dialog", { name: "Vault & backup", exact: true });
   await panel.getByRole("button", { name: `Delete saved experiment ${fixture.title}`, exact: true }).click();
   await panel.getByRole("button", { name: "Delete saved copy", exact: true }).click();
   await expect(panel.getByText(/No saved experiments yet/)).toBeVisible();
