@@ -20,6 +20,9 @@ Free, open-source AI security tools: [nestcipher.com](https://nestcipher.com)
   **Prompt Studio** guides a question, criterion, baseline and up to three
   variants into reviewed, untested attempts. An optional separate brainstorming
   brief can be previewed and copied into the researcher's own AI tool.
+  **Experiment Map** traces parent links, groups identical captured inputs and
+  conditions, and previews a private results note with descriptive manual-state
+  counts and links to the source attempts.
 
 Built with Next.js 16 (App Router), React 19, TypeScript and Tailwind v4 on
 Vercel. Public tools and local research need no account. Optional Supabase
@@ -69,6 +72,13 @@ uses the same encrypted saving and private exports after handoff. The optional
 briefing accepts separately entered generic text; no saved evidence is included
 automatically and no AI provider request occurs. See
 [planning and briefing boundaries](docs/PROMPT_STUDIO.md).
+
+In Review, choose **Experiment map** to inspect lineage and captured-input
+groups. Equal captured fields do not establish independent trials or matched
+real environments; missing conditions stay visible. The results-note preview
+contains title/challenge metadata, IDs and descriptive counts, excluding raw
+evidence and condition values. It is a readable private summary, not a restore
+archive. See [experiment map and results](docs/EXPERIMENT_MAP.md).
 
 Local encryption is not origin isolation: same-origin code can read/delete
 ciphertext, and compromised code or device access can expose an unlocked page.
