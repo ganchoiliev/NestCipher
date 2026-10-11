@@ -17,6 +17,9 @@ Free, open-source AI security tools: [nestcipher.com](https://nestcipher.com)
   and attach private snapshots from the existing tools. The research library
   searches saved evidence locally, filters by tags and historical targets, and
   exports selected saved revisions as a linked private Obsidian ZIP pack.
+  **Prompt Studio** guides a question, criterion, baseline and up to three
+  variants into reviewed, untested attempts. An optional separate brainstorming
+  brief can be previewed and copied into the researcher's own AI tool.
 
 Built with Next.js 16 (App Router), React 19, TypeScript and Tailwind v4 on
 Vercel. Public tools and local research need no account. Optional Supabase
@@ -59,6 +62,13 @@ the unlocked page. The Obsidian pack contains readable Markdown, an index and
 instructions; it is **not encrypted** and is not a restore archive. Preview the
 selected saved notes and omissions before downloading. See
 [the library and Obsidian workflow](docs/RESEARCH_LIBRARY.md).
+
+Prompt Studio planning stays in page memory until explicit preparation or a
+reviewed research JSON download. It protects the existing working draft and
+uses the same encrypted saving and private exports after handoff. The optional
+briefing accepts separately entered generic text; no saved evidence is included
+automatically and no AI provider request occurs. See
+[planning and briefing boundaries](docs/PROMPT_STUDIO.md).
 
 Local encryption is not origin isolation: same-origin code can read/delete
 ciphertext, and compromised code or device access can expose an unlocked page.
