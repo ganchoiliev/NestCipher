@@ -1,6 +1,6 @@
 "use client";
 
-import { createContext, useContext, useEffect, useMemo, useRef, useState, useSyncExternalStore } from "react";
+import { createContext, useCallback, useContext, useEffect, useMemo, useRef, useState, useSyncExternalStore } from "react";
 import {
   LIMITS,
   createAttempt,
@@ -21,6 +21,7 @@ import { ResearchVaultError, type ResearchVaultSession, type SavedExperimentSumm
 import { createLabExperiment, getResearchLab, type ResearchLabId } from "@/lib/research-labs";
 import { ResearchVaultPanel } from "./ResearchVaultPanel";
 import { ResearchLibrary } from "@/components/research/ResearchLibrary";
+import { PromptStudio } from "@/components/research/PromptStudio";
 import { ResearchTextDiff } from "./ResearchTextDiff";
 import { ReportAttachments } from "./ReportAttachments";
 import { ResearchAttemptReview } from "./ResearchAttemptReview";
@@ -29,8 +30,9 @@ import styles from "./ResearchWorkbench.module.css";
 type View = "compose" | "review" | "compare" | "export" | "library";
 type EvidenceField = "input" | "context" | "response" | "actions" | "notes" | "assessmentReason" | "executionError";
 type Pending =
-  | { kind: "replace"; next: Experiment; imported: boolean; label: string; saved?: SavedExperimentSummary }
+  | { kind: "replace"; next: Experiment; imported: boolean; label: string; saved?: SavedExperimentSummary; prepared?: boolean }
   | { kind: "delete"; id: string; label: string }
+  | { kind: "planner-close"; label: string }
   | { kind: "lock"; label: string };
 const subscribe = () => () => {};
 const mountedSnapshot = () => true;
@@ -180,6 +182,10 @@ export function ResearchWorkbench({ selectedLabId, initialAccountStatus }: { sel
   const [vaultGeneration, setVaultGeneration] = useState(0);
   const [saving, setSaving] = useState(false);
   const [saveConflict, setSaveConflict] = useState(false);
+  const [plannerOpen, setPlannerOpen] = useState(false);
+  const [plannerDirty, setPlannerDirty] = useState(false);
+  const [plannerGeneration, setPlannerGeneration] = useState(0);
+  const plannerRef = useRef({ open: false, dirty: false });
   const vaultRef = useRef<ResearchVaultSession | null>(null);
   const savedRecordRef = useRef<SavedExperimentSummary | null>(null);
   const savingRef = useRef(false);
@@ -192,6 +198,22 @@ export function ResearchWorkbench({ selectedLabId, initialAccountStatus }: { sel
   const promptRef = useRef<HTMLDivElement>(null);
   const attemptHeading = useRef<HTMLHeadingElement>(null);
   const comparisonHeading = useRef<HTMLHeadingElement>(null);
+  const plannerLaunch = useRef<HTMLButtonElement>(null);
+  const closePlanner = useCallback(() => {
+    plannerRef.current = { open: false, dirty: false };
+    setPlannerOpen(false);
+    setPlannerDirty(false);
+    setPlannerGeneration((value) => value + 1);
+  }, []);
+  const plannerChanged = useCallback((changed: boolean) => {
+    if (!plannerRef.current.open) return;
+    plannerRef.current.dirty = changed;
+    setPlannerDirty(changed);
+  }, []);
+  const setPending = useCallback((next: Pending | null) => {
+    pendingRef.current = next;
+    setPendingState(next);
+  }, []);
   const active = experiment?.attempts.find((attempt) => attempt.id === activeId) ?? experiment?.attempts[0];
   const activeIndex = active ? experiment!.attempts.indexOf(active) : -1;
   const baseline = experiment?.attempts.find((attempt) => attempt.id === compareA) ?? experiment?.attempts[0];
@@ -209,21 +231,32 @@ export function ResearchWorkbench({ selectedLabId, initialAccountStatus }: { sel
   }, [experiment, omitted, includeReports, view]);
 
   useEffect(() => {
-    if (!dirty) return;
+    if (!dirty && !plannerDirty) return;
     const warn = (event: BeforeUnloadEvent) => { event.preventDefault(); event.returnValue = ""; };
     window.addEventListener("beforeunload", warn);
     return () => window.removeEventListener("beforeunload", warn);
-  }, [dirty]);
+  }, [dirty, plannerDirty]);
+
+  useEffect(() => {
+    if (!plannerOpen) return;
+    const escape = (event: KeyboardEvent) => {
+      if (event.key !== "Escape" || pendingRef.current || libraryOpen || savingRef.current) return;
+      event.preventDefault();
+      if (plannerRef.current.dirty) {
+        setPending({ kind: "planner-close", label: "Close Prompt Studio?" });
+      } else {
+        closePlanner();
+        window.requestAnimationFrame(() => plannerLaunch.current?.focus());
+      }
+    };
+    window.addEventListener("keydown", escape);
+    return () => window.removeEventListener("keydown", escape);
+  }, [plannerOpen, libraryOpen, closePlanner, setPending]);
 
   useEffect(() => {
     if (pending && dialog.current && !dialog.current.open) dialog.current.showModal();
     if (!pending && dialog.current?.open) dialog.current.close();
   }, [pending]);
-
-  function setPending(next: Pending | null) {
-    pendingRef.current = next;
-    setPendingState(next);
-  }
 
   function commit(next: Experiment) {
     const checked = validateExperiment(next);
@@ -254,14 +287,15 @@ export function ResearchWorkbench({ selectedLabId, initialAccountStatus }: { sel
     } }));
   }
 
-  function replace(next: Experiment, imported: boolean, saved?: SavedExperimentSummary) {
+  function replace(next: Experiment, imported: boolean, saved?: SavedExperimentSummary, prepared = false, preservePlanner = false) {
+    if (!preservePlanner) closePlanner();
     workspaceGeneration.current += 1;
     setExperiment(next);
     setActiveId(next.attempts[0]?.id ?? null);
     setCompareA(next.attempts[0]?.id ?? null);
     setCompareB(next.attempts[1]?.id ?? null);
     importedFields.current = new Map(imported ? next.attempts.map((attempt) => [attempt.id, new Set(evidenceFields.map((field) => field.key))]) : []);
-    const changed = !saved && !imported && next.tags.includes("synthetic-example");
+    const changed = prepared || (!saved && !imported && next.tags.includes("synthetic-example"));
     currentSession.current = { experiment: next, dirty: changed };
     setDirty(changed);
     setDefaultsOpen(!imported && next.attempts.length === 0);
@@ -274,18 +308,46 @@ export function ResearchWorkbench({ selectedLabId, initialAccountStatus }: { sel
     savedRecordRef.current = saved ?? null;
     setSavedRecord(saved ?? null);
     setSaveConflict(false);
-    setStatus(saved ? "Saved experiment opened. Exact captured evidence and condition snapshots were preserved." : imported ? "Backup restored. Exact captured evidence and condition snapshots were preserved." : next.tags.includes("synthetic-example") ? "Synthetic example loaded. Its content is authored, not a real run." : "Blank experiment started. Nothing has been tested.");
+    setStatus(prepared ? `${next.attempts.length} untested ${next.attempts.length === 1 ? "attempt" : "attempts"} prepared from the reviewed plan. Observations and assessments are empty. Choose Save locally to keep this experiment.` : saved ? "Saved experiment opened. Exact captured evidence and condition snapshots were preserved." : imported ? "Backup restored. Exact captured evidence and condition snapshots were preserved." : next.tags.includes("synthetic-example") ? "Synthetic example loaded. Its content is authored, not a real run." : "Blank experiment started. Nothing has been tested.");
   }
 
-  function requestReplacement(next: Experiment, imported: boolean, label: string, saved?: SavedExperimentSummary) {
-    if (currentSession.current.experiment && currentSession.current.dirty) setPending({ kind: "replace", next, imported, label, saved });
-    else replace(next, imported, saved);
+  function requestReplacement(next: Experiment, imported: boolean, label: string, saved?: SavedExperimentSummary, prepared = false) {
+    // A completed file read can supersede an earlier discard choice during
+    // encryption. saveAndContinue checks pending identity before proceeding.
+    if ((currentSession.current.experiment && currentSession.current.dirty) || (!prepared && plannerRef.current.dirty)) setPending({ kind: "replace", next, imported, label, saved, prepared });
+    else replace(next, imported, saved, prepared);
+  }
+
+  function openPlanner() {
+    if (savingRef.current || pendingRef.current) return;
+    plannerRef.current = { open: true, dirty: false };
+    setPlannerDirty(false);
+    setPlannerOpen(true);
+    setView("compose");
+    setError("");
+    setStatus("");
+  }
+
+  function requestPlannerClose() {
+    if (savingRef.current || pendingRef.current) return;
+    if (plannerRef.current.dirty) setPending({ kind: "planner-close", label: "Close Prompt Studio?" });
+    else {
+      closePlanner();
+      window.requestAnimationFrame(() => plannerLaunch.current?.focus());
+    }
+  }
+
+  function preparePlan(next: Experiment) {
+    if (!plannerRef.current.open || savingRef.current || pendingRef.current) return;
+    const checked = validateExperiment(next);
+    if (!checked.ok) { setError(checked.error); return; }
+    requestReplacement(checked.experiment, false, "Open the reviewed plan in the Workbench?", undefined, true);
   }
 
   function unlocked(session: ResearchVaultSession) {
     vaultRef.current = session;
     setVaultSession(session);
-    if (!currentSession.current.experiment) setView("library");
+    if (!currentSession.current.experiment && !plannerRef.current.open) setView("library");
     setStatus("Local vault unlocked. Choose Save locally to store the current draft; nothing was saved automatically.");
   }
 
@@ -311,7 +373,7 @@ export function ResearchWorkbench({ selectedLabId, initialAccountStatus }: { sel
       const unchanged = currentSession.current.experiment === source;
       if (asNewCopy && unchanged) {
         const previousImported = importedFields.current;
-        replace(snapshot, false, summary);
+        replace(snapshot, false, summary, false, true);
         importedFields.current = new Map(source.attempts.flatMap((attempt) => {
           const fields = previousImported.get(attempt.id);
           return fields ? [[idMap.get(attempt.id)!, fields] as const] : [];
@@ -349,6 +411,7 @@ export function ResearchWorkbench({ selectedLabId, initialAccountStatus }: { sel
   }
 
   function finishLock() {
+    closePlanner();
     vaultRef.current?.lock();
     vaultRef.current = null;
     savedRecordRef.current = null;
@@ -373,7 +436,7 @@ export function ResearchWorkbench({ selectedLabId, initialAccountStatus }: { sel
 
   function requestLock() {
     if (savingRef.current) return;
-    if (currentSession.current.experiment && currentSession.current.dirty) setPending({ kind: "lock", label: "Lock vault and close this draft?" });
+    if ((currentSession.current.experiment && currentSession.current.dirty) || plannerRef.current.dirty) setPending({ kind: "lock", label: "Lock vault and close this draft?" });
     else finishLock();
   }
 
@@ -450,7 +513,14 @@ export function ResearchWorkbench({ selectedLabId, initialAccountStatus }: { sel
   function confirmPending(choice = pendingRef.current) {
     if (!choice || choice !== pendingRef.current || savingRef.current) return;
     if (choice.kind === "lock") { finishLock(); return; }
-    if (choice.kind === "replace") { replace(choice.next, choice.imported, choice.saved); return; }
+    if (choice.kind === "planner-close") {
+      closePlanner();
+      setPending(null);
+      setStatus("Prompt Studio closed. The working experiment is unchanged.");
+      window.requestAnimationFrame(() => plannerLaunch.current?.focus());
+      return;
+    }
+    if (choice.kind === "replace") { replace(choice.next, choice.imported, choice.saved, choice.prepared); return; }
     if (!experiment) return;
     const now = new Date().toISOString();
     const index = experiment.attempts.findIndex((attempt) => attempt.id === choice.id);
@@ -465,6 +535,7 @@ export function ResearchWorkbench({ selectedLabId, initialAccountStatus }: { sel
 
   async function saveAndContinue() {
     const choice = pendingRef.current;
+    if (!choice || choice.kind === "planner-close" || choice.kind === "delete" || (plannerRef.current.dirty && !(choice.kind === "replace" && choice.prepared))) return;
     const workspace = workspaceGeneration.current;
     if (choice && await saveLocally() && choice === pendingRef.current && workspace === workspaceGeneration.current) confirmPending(choice);
   }
@@ -543,6 +614,7 @@ export function ResearchWorkbench({ selectedLabId, initialAccountStatus }: { sel
     ? `Private · ${disclosure.status === "window-reached" ? "Earliest date reached" : "Restricted until"} ${disclosure.publicNotBefore.replace("T", " ").replace(".000Z", " UTC")}`
     : `Private · ${disclosure?.status === "end-unconfirmed" ? "End unconfirmed" : "End unknown"}`;
   const storageStatus = savedRecord ? dirty ? "Unsaved changes" : `Saved locally · ${savedRecord.savedAt.replace("T", " ").replace(".000Z", " UTC")}` : "Session only";
+  const discardingPlan = plannerDirty && !!pending && (pending.kind === "planner-close" || pending.kind === "lock" || (pending.kind === "replace" && !pending.prepared));
 
   return <FieldErrorContext.Provider value={setError}><div className={`site-container ${styles.page}`}>
     <nav className="breadcrumb" aria-label="Breadcrumb">
@@ -559,14 +631,14 @@ export function ResearchWorkbench({ selectedLabId, initialAccountStatus }: { sel
       <div className={styles.headerActions}><span className={styles.privateBadge}>Private · publish: false</span><button type="button" className="button-secondary" disabled={!mounted || saving} onClick={() => setLibraryOpen(true)}>Local library</button></div>
     </header>
 
-    {selectedLab && <section className={styles.labCallout} aria-labelledby="selected-lab-heading">
+    {selectedLab && !plannerOpen && <section className={styles.labCallout} aria-labelledby="selected-lab-heading">
       <div><p className="eyebrow">Synthetic lab / version {selectedLab.version}</p><h2 id="selected-lab-heading">{selectedLab.title}</h2><p>Prepare two private, untested attempts from the authored exercise. Results stay empty; no model runs and nothing is saved automatically.</p></div>
       <div className={styles.labActions}><button type="button" className="button-primary" disabled={!mounted || saving} onClick={startSelectedLab}>Start this lab <span aria-hidden="true">↗</span></button><a href={`/labs/${selectedLab.id}`} target="_blank" rel="noopener noreferrer">Review the exercise <span aria-hidden="true">↗</span></a></div>
     </section>}
 
     <div className={styles.sessionNotice} aria-labelledby="session-heading">
-      <div><h2 id="session-heading" data-testid="storage-status">{saving ? "Saving submitted revision…" : storageStatus}</h2><p>{experiment ? "Save is explicit. Unsaved changes are lost on reload or close; mobile leaving warnings may not appear. Downloads are readable private files." : "Work without saving, or opt into an encrypted local vault. Optional account backup is a separate action in the local library; no model runs here."}</p></div>
-      <div className={styles.utilityActions}>{experiment && <button type="button" className="button-primary" onClick={() => void saveLocally()} disabled={saving}>{saving ? "Saving…" : "Save locally"}</button>}<button type="button" className="button-secondary" aria-label="Download full JSON backup" onClick={backup} disabled={!experiment || saving}>JSON backup</button>{vaultSession && <button type="button" className={styles.textButton} onClick={requestLock} disabled={saving}>Lock vault</button>}</div>
+      <div><h2 id="session-heading" data-testid="storage-status">{saving ? "Saving submitted revision…" : plannerOpen ? "Planning in this page" : storageStatus}</h2><p>{plannerOpen ? experiment ? `Your working experiment is kept in memory (${storageStatus.toLowerCase()}). The save and JSON buttons below refer to that experiment. Review and prepare the new plan to bring it into the Workbench.` : "The plan and briefing stay in this page until you explicitly prepare or download a reviewed experiment. Unsaved planning edits are lost on reload or close." : experiment ? "Save is explicit. Unsaved changes are lost on reload or close; mobile leaving warnings may not appear. Downloads are readable private files." : "Work without saving, or opt into an encrypted local vault. Optional account backup is a separate action in the local library; no model runs here."}</p></div>
+      <div className={styles.utilityActions}>{experiment && <button type="button" className="button-primary" onClick={() => void saveLocally()} disabled={saving}>{saving ? "Saving…" : plannerOpen ? "Save working experiment" : "Save locally"}</button>}{(!plannerOpen || experiment) && <button type="button" className="button-secondary" aria-label={plannerOpen ? "Download working experiment JSON" : "Download full JSON backup"} onClick={backup} disabled={!experiment || saving}>{plannerOpen ? "Working experiment JSON" : "JSON backup"}</button>}{vaultSession && <button type="button" className={styles.textButton} onClick={requestLock} disabled={saving}>Lock vault</button>}</div>
     </div>
     <div className={styles.feedback}>
       {error && <p role="alert" className={styles.error}>{error}</p>}
@@ -577,13 +649,13 @@ export function ResearchWorkbench({ selectedLabId, initialAccountStatus }: { sel
     <input ref={fileInput} data-testid="restore-experiment" className={styles.hiddenInput} type="file" accept=".json,application/json" aria-label="Restore private JSON backup" tabIndex={-1}
       onChange={(event) => { const file = event.target.files?.[0]; event.target.value = ""; void restoreFile(file); }} />
 
-    <div className={styles.workToolbar}><div className={styles.viewSwitch} role="group" aria-label="Workbench view">{(["compose", "review", "compare", "export", "library"] as const).map((item) => <button type="button" key={item} aria-pressed={view === item} disabled={!mounted || (item !== "compose" && item !== "library" && !experiment)} onClick={() => setView(item)}>{item === "compose" ? "Compose" : item === "review" ? "Review" : item === "compare" ? "Compare" : item === "export" ? "Export" : "Research library"}</button>)}</div>{experiment && view !== "library" && <button type="button" className="button-primary" onClick={() => addAttempt()} disabled={experiment.attempts.length >= LIMITS.maxAttempts}>New attempt <span aria-hidden="true">+</span></button>}</div>
+    {!plannerOpen && <div className={styles.workToolbar}><div className={styles.viewSwitch} role="group" aria-label="Workbench view">{(["compose", "review", "compare", "export", "library"] as const).map((item) => <button type="button" key={item} aria-pressed={view === item} disabled={!mounted || (item !== "compose" && item !== "library" && !experiment)} onClick={() => setView(item)}>{item === "compose" ? "Compose" : item === "review" ? "Review" : item === "compare" ? "Compare" : item === "export" ? "Export" : "Research library"}</button>)}</div>{experiment && view !== "library" && <div className={styles.utilityActions}>{view === "compose" && <button ref={plannerLaunch} type="button" className="button-secondary" onClick={openPlanner} disabled={saving}>Plan an experiment</button>}<button type="button" className="button-primary" onClick={() => addAttempt()} disabled={saving || experiment.attempts.length >= LIMITS.maxAttempts}>New attempt <span aria-hidden="true">+</span></button></div>}</div>}
 
-    {view === "library" ? <ResearchLibrary key={`library-${vaultGeneration}`} session={vaultSession} refresh={libraryRefresh} busy={saving} onManageVault={() => setLibraryOpen(true)} onOpenExperiment={(next, summary) => requestReplacement(next, true, "Open this saved experiment", summary)} /> : !experiment ? <section className={styles.empty} aria-labelledby="start-heading">
+    {plannerOpen ? <div className={styles.plannerWorkspace}><div className={styles.plannerBar}><p>Private planning / explicit handoff</p><button type="button" className="button-secondary" onClick={requestPlannerClose} disabled={saving || !!pending}>Close Prompt Studio</button></div><PromptStudio key={`planner-${plannerGeneration}`} onPrepare={preparePlan} onDirtyChange={plannerChanged} busy={saving || !!pending} /></div> : view === "library" ? <ResearchLibrary key={`library-${vaultGeneration}`} session={vaultSession} refresh={libraryRefresh} busy={saving} onManageVault={() => setLibraryOpen(true)} onOpenExperiment={(next, summary) => requestReplacement(next, true, "Open this saved experiment", summary)} /> : !experiment ? <section className={styles.empty} aria-labelledby="start-heading">
       <div><p className="eyebrow">One experiment. A useful record.</p><h2 id="start-heading">Keep the question<br />beside the evidence.</h2><p>You run the target elsewhere. Record what you sent, what you observed and what changed between attempts.</p></div>
-      <div className={styles.emptyActions}><button type="button" className="button-primary" disabled={!mounted} onClick={startBlank}>Start an experiment <span aria-hidden="true">↗</span></button><button type="button" className="button-secondary" disabled={!mounted} onClick={() => requestReplacement(createSyntheticExperiment(), false, "Load the synthetic example")}>Load synthetic example</button><button type="button" className={styles.textButton} disabled={!mounted} onClick={() => fileInput.current?.click()}>Open a JSON backup</button><p>Examples are invented and labelled. Only your own supported NestCipher backup format can be restored.</p></div>
+      <div className={styles.emptyActions}><button ref={plannerLaunch} type="button" className="button-primary" disabled={!mounted} onClick={openPlanner}>Plan an experiment <span aria-hidden="true">↗</span></button><button type="button" className="button-secondary" disabled={!mounted} onClick={startBlank}>Start an experiment <span aria-hidden="true">↗</span></button><button type="button" className="button-secondary" disabled={!mounted} onClick={() => requestReplacement(createSyntheticExperiment(), false, "Load the synthetic example")}>Load synthetic example</button><button type="button" className={styles.textButton} disabled={!mounted} onClick={() => fileInput.current?.click()}>Open a JSON backup</button><p>Examples are invented and labelled. Only your own supported NestCipher backup format can be restored.</p></div>
     </section> : <>
-      {synthetic && <p className={styles.synthetic}>Synthetic example — authored exercise content, not a real model or challenge run.</p>}
+      {synthetic && <p className={styles.synthetic}>Started from a synthetic example. Inputs may have been edited; no model or challenge run is verified by NestCipher.</p>}
       <section className={styles.setup} aria-labelledby="setup-heading">
         <h2 id="setup-heading" className="sr-only">Experiment setup</h2><div className={styles.experimentBar}><Field id="experiment-title" label="Experiment title" value={experiment.title} onChange={(title) => updateDocument((current) => ({ ...current, title }))} /><div className={styles.utilityActions}><button type="button" className={styles.textButton} onClick={() => fileInput.current?.click()} disabled={saving}>Restore JSON</button><button type="button" className={styles.textButton} onClick={startBlank} disabled={saving}>New experiment</button></div></div>
         <ExperimentTags key={experiment.id} tags={experiment.tags} onChange={(tags) => updateDocument((current) => ({ ...current, tags }))} />
@@ -666,7 +738,7 @@ export function ResearchWorkbench({ selectedLabId, initialAccountStatus }: { sel
     <footer className={styles.toolFooter}><p>Manual research, explicit saving, portable private files. Optional encrypted account backup; research stays private.</p><a href="/community" target="_blank" rel="noopener noreferrer">Open the field guide <span aria-hidden="true">↗</span></a><a href="/privacy" target="_blank" rel="noopener noreferrer">Read privacy details <span aria-hidden="true">↗</span></a></footer>
     <ResearchVaultPanel key={`vault-${vaultGeneration}`} open={libraryOpen} session={vaultSession} refresh={libraryRefresh} initialAccountStatus={initialAccountStatus} onClose={() => setLibraryOpen(false)} onUnlocked={unlocked} onOpenExperiment={(next, summary) => requestReplacement(next, true, "Open this saved experiment", summary)} onDeleted={savedCopyDeleted} onLock={requestLock} />
     <dialog ref={dialog} className={styles.dialog} aria-labelledby="replace-heading" onCancel={(event) => { event.preventDefault(); if (!saving) setPending(null); }}>
-      <p className="eyebrow">Keep a copy before discarding</p><h2 id="replace-heading">{pending?.label ?? "Replace current work"}</h2><p>{pending?.kind === "delete" ? "This removes the attempt and clears references from its variants. Their remaining evidence is preserved." : pending?.kind === "lock" ? "Locking closes the decrypted working draft. Saved records remain encrypted; unsaved changes would be lost. Save or download a private backup before continuing." : "The working draft will be replaced. Unsaved changes exist only in memory; save locally or download a private backup to keep them."}</p><div className={styles.dialogActions}><button type="button" className="button-secondary" onClick={() => setPending(null)} disabled={saving}>Keep current session</button>{vaultSession && pending?.kind !== "delete" && <button type="button" className="button-primary" onClick={() => void saveAndContinue()} disabled={saving}>{saving ? "Saving…" : "Save and continue"}</button>}<button type="button" className="button-secondary" onClick={backup} disabled={saving}>Download current backup</button><button type="button" className="button-secondary" onClick={() => confirmPending()} disabled={saving}>{pending?.kind === "delete" ? "Delete this attempt" : pending?.kind === "lock" ? "Discard changes and lock" : "Replace current session"}</button></div><p className={styles.help}>Downloads are readable private files. Check that the file is available before discarding your work.</p>{status && <p role="status">{status}</p>}{error && <p role="alert" className={styles.error}>{error}</p>}
+      <p className="eyebrow">Keep a copy before discarding</p><h2 id="replace-heading">{pending?.label ?? "Replace current work"}</h2><p>{pending?.kind === "delete" ? "This removes the attempt and clears references from its variants. Their remaining evidence is preserved." : pending?.kind === "planner-close" ? "Closing discards the unprepared plan and briefing. Your working experiment stays unchanged. Keep this session to continue planning or review and download the prepared research JSON." : pending?.kind === "lock" ? "Locking closes the decrypted working draft and clears Prompt Studio. Saved records remain encrypted; unsaved changes would be lost." : "The working experiment will be replaced. Save locally or download its private backup to keep unsaved changes."}</p>{discardingPlan && pending?.kind !== "planner-close" && <p className={styles.help}>The unprepared plan and briefing will also be discarded. Saving or downloading the working experiment does not include that planning text. Keep this session to review the plan first.</p>}<div className={styles.dialogActions}><button type="button" className="button-secondary" onClick={() => setPending(null)} disabled={saving}>Keep current session</button>{vaultSession && experiment && pending?.kind !== "delete" && pending?.kind !== "planner-close" && !discardingPlan && <button type="button" className="button-primary" onClick={() => void saveAndContinue()} disabled={saving}>{saving ? "Saving…" : "Save and continue"}</button>}{experiment && pending?.kind !== "planner-close" && <button type="button" className="button-secondary" onClick={backup} disabled={saving}>{discardingPlan ? "Download working experiment JSON" : "Download current backup"}</button>}<button type="button" className="button-secondary" onClick={() => confirmPending()} disabled={saving}>{pending?.kind === "delete" ? "Delete this attempt" : pending?.kind === "planner-close" ? "Discard plan and close" : pending?.kind === "lock" ? "Discard changes and lock" : "Replace current session"}</button></div><p className={styles.help}>Downloads are readable private files. Check that the file is available before discarding your work.</p>{status && <p role="status">{status}</p>}{error && <p role="alert" className={styles.error}>{error}</p>}
     </dialog>
   </div></FieldErrorContext.Provider>;
 }
