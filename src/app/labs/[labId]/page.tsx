@@ -11,7 +11,7 @@ type LabPageProps = { params: Promise<{ labId: string }> };
 export async function generateMetadata({ params }: LabPageProps): Promise<Metadata> {
   const { labId } = await params;
   const lab = getResearchLab(labId);
-  if (!lab) notFound();
+  if (!lab) return { title: "Page not found — NestCipher", robots: { index: false, follow: false } };
   return {
     title: `${lab.title} — Learning Lab — NestCipher`,
     description: lab.summary,

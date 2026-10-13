@@ -23,6 +23,10 @@ Free, open-source AI security tools: [nestcipher.com](https://nestcipher.com)
   **Experiment Map** traces parent links, groups identical captured inputs and
   conditions, and previews a private results note with descriptive manual-state
   counts and links to the source attempts.
+- **Research Casebook** — three complete, authored fictional walkthroughs with
+  exact inputs, known and unknown conditions, bounded claims and public teaching
+  notes. Readable without JavaScript; fictional outcomes never become Workbench
+  results. See [the casebook method](docs/RESEARCH_CASEBOOK.md).
 
 Built with Next.js 16 (App Router), React 19, TypeScript and Tailwind v4 on
 Vercel. Public tools and local research need no account. Optional Supabase

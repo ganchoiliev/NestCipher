@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import { ArrowIcon } from "@/components/ui/Brand";
 import { researchLabs } from "@/lib/research-labs";
+import { researchCasebook } from "@/lib/research-casebook";
 import styles from "./FieldGuide.module.css";
 
 export const metadata: Metadata = {
@@ -171,13 +172,20 @@ export default function CommunityPage() {
         </div>
       </section>
 
+      <section className={styles.practice} aria-labelledby="casebook-heading">
+        <div className={styles.sectionBar}><p className="eyebrow">03 / Read a complete research story</p><span>AUTHORED WALKTHROUGHS / VERSION 1</span></div>
+        <div className={styles.sectionIntro}><h2 id="casebook-heading">A claim needs<br />a record.</h2><p>Inspect the question, exact change, fictional outcomes and limits behind three worked examples. Follow the reasoning before planning your own research.</p></div>
+        <div className={styles.practiceRows}>{researchCasebook.map((entry) => <Link href={`/casebook/${entry.id}`} key={entry.id}><span className={styles.practiceNumber}>{entry.ordinal}</span><div><h3>{entry.title}</h3><p>{entry.summary}</p></div><ArrowIcon diagonal /></Link>)}</div>
+        <Link href="/casebook" className="text-link">Explore the research casebook <ArrowIcon /></Link>
+      </section>
+
       <section
         id="research-notes"
         className={styles.notes}
         aria-labelledby="notes-heading"
       >
         <div className={styles.notesIntro}>
-          <p className="eyebrow">03 / Keep a useful record</p>
+          <p className="eyebrow">04 / Keep a useful record</p>
           <h2 id="notes-heading">
             A finding is more
             <br />
@@ -236,7 +244,7 @@ export default function CommunityPage() {
       <section className={styles.resources} aria-labelledby="resources-heading">
         <div className={styles.resourcesHeader}>
           <div>
-            <p className="eyebrow">04 / Outside the nest</p>
+            <p className="eyebrow">05 / Outside the nest</p>
             <h2 id="resources-heading">
               Good places
               <br />
@@ -270,7 +278,7 @@ export default function CommunityPage() {
       </section>
       <section className={styles.contribute} aria-labelledby="contribute-heading">
         <div className={styles.sectionBar}>
-          <p className="eyebrow">05 / Build the field guide</p>
+          <p className="eyebrow">06 / Build the field guide</p>
           <span>PUBLIC TEACHING MATERIAL</span>
         </div>
         <div className={styles.sectionIntro}>

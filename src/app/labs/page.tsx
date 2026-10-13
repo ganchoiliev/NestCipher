@@ -90,6 +90,7 @@ export default function LearningLabsPage() {
           <Link href="/community" className="text-link">
             Explore the field guide <ArrowIcon />
           </Link>
+          <Link href="/casebook" className="text-link">Read the research casebook <ArrowIcon /></Link>
         </div>
       </section>
     </div>

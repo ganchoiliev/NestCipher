@@ -36,7 +36,7 @@ export default function Home() {
             </a>
           </div>
           <p className={styles.access}>
-            FREE TO USE <span aria-hidden="true">/</span> NO ACCOUNT{" "}
+            FREE TO USE <span aria-hidden="true">/</span> ACCOUNT OPTIONAL{" "}
             <span aria-hidden="true">/</span> OPEN SOURCE
           </p>
         </div>
@@ -65,7 +65,7 @@ export default function Home() {
                     : tool.category === "scanners"
                       ? "Live header checks"
                       : tool.category === "research"
-                        ? "Private session notes"
+                        ? "Private research workflow"
                         : "Learn & practise"}
                 </span>
               </p>
@@ -113,6 +113,9 @@ export default function Home() {
             </p>
             <Link href="/labs" className={styles.guideLink}>
               EXPLORE THE LABS <ArrowIcon diagonal />
+            </Link>
+            <Link href="/casebook" className={styles.guideLink}>
+              READ THE RESEARCH CASEBOOK <ArrowIcon diagonal />
             </Link>
             <Link href="/community" className={styles.guideLink}>
               OPEN THE FIELD GUIDE <ArrowIcon diagonal />

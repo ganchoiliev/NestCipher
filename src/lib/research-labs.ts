@@ -7,7 +7,9 @@ import {
   type Experiment,
 } from "./research-workbench";
 
-export type ResearchLabId = "source-authority" | "action-evidence" | "controlled-comparison";
+import { researchCatalogIds } from "./research-catalog-routes";
+
+export type ResearchLabId = (typeof researchCatalogIds.labs)[number];
 export type LabOperation = "summarise-agenda" | "send-agenda";
 export type LabPermissionGate = {
   proposal: { operation: LabOperation; recipient: string | null };
