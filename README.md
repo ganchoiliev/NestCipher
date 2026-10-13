@@ -14,7 +14,9 @@ Free, open-source AI security tools: [nestcipher.com](https://nestcipher.com)
   compare conditions and export private Markdown notes for Obsidian or lossless
   JSON backups. Opt in to an encrypted local vault for explicit saving, inspect
   prompt differences, review attempts with local search and manual-state filters,
-  and attach private snapshots from the existing tools.
+  and attach private snapshots from the existing tools. The research library
+  searches saved evidence locally, filters by tags and historical targets, and
+  exports selected saved revisions as a linked private Obsidian ZIP pack.
 
 Built with Next.js 16 (App Router), React 19, TypeScript and Tailwind v4 on
 Vercel. Public tools and local research need no account. Optional Supabase
@@ -49,6 +51,14 @@ browser vault; it never replaces or merges an existing one. Cloud archives are
 encrypted; ordinary experiment JSON/Markdown downloads remain readable files.
 See [cloud setup and boundaries](docs/RESEARCH_CLOUD.md) and
 [the current hosted setup and verification steps](docs/CLOUD_LAUNCH.md).
+
+The Research library is separate from vault setup and account backup. Create a
+new vault or restore an existing cloud copy through separate paths; restoring
+uses the original vault passphrase. Library search and its index exist only in
+the unlocked page. The Obsidian pack contains readable Markdown, an index and
+instructions; it is **not encrypted** and is not a restore archive. Preview the
+selected saved notes and omissions before downloading. See
+[the library and Obsidian workflow](docs/RESEARCH_LIBRARY.md).
 
 Local encryption is not origin isolation: same-origin code can read/delete
 ciphertext, and compromised code or device access can expose an unlocked page.

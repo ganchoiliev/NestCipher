@@ -34,6 +34,8 @@ export interface SavedExperimentSummary {
 
 export interface ResearchVaultSession {
   list(): Promise<SavedExperimentSummary[]>;
+  /** One authenticated local snapshot; plaintext is returned only while unlocked. */
+  readAll(): Promise<Array<{ experiment: Experiment; summary: SavedExperimentSummary }>>;
   save(experiment: Experiment, expectedRevision: number | null): Promise<SavedExperimentSummary>;
   open(id: string): Promise<{ experiment: Experiment; summary: SavedExperimentSummary }>;
   remove(id: string, expectedRevision: number): Promise<void>;
@@ -428,6 +430,13 @@ function createSession(database: IDBDatabase, header: VaultHeader, initialKey: C
       return schedule(async () => {
         const { records } = await decryptedSnapshot();
         return records.map((record) => ({ ...record.summary })).sort((a, b) => b.savedAt.localeCompare(a.savedAt));
+      });
+    },
+    readAll() {
+      return schedule(async () => {
+        const { records } = await decryptedSnapshot();
+        return records.map((record) => ({ experiment: record.experiment, summary: { ...record.summary } }))
+          .sort((a, b) => b.summary.savedAt.localeCompare(a.summary.savedAt));
       });
     },
     async save(experiment, expectedRevision) {

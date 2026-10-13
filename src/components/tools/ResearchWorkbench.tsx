@@ -20,12 +20,13 @@ import {
 import { ResearchVaultError, type ResearchVaultSession, type SavedExperimentSummary } from "@/lib/research-vault";
 import { createLabExperiment, getResearchLab, type ResearchLabId } from "@/lib/research-labs";
 import { ResearchVaultPanel } from "./ResearchVaultPanel";
+import { ResearchLibrary } from "@/components/research/ResearchLibrary";
 import { ResearchTextDiff } from "./ResearchTextDiff";
 import { ReportAttachments } from "./ReportAttachments";
 import { ResearchAttemptReview } from "./ResearchAttemptReview";
 import styles from "./ResearchWorkbench.module.css";
 
-type View = "compose" | "review" | "compare" | "export";
+type View = "compose" | "review" | "compare" | "export" | "library";
 type EvidenceField = "input" | "context" | "response" | "actions" | "notes" | "assessmentReason" | "executionError";
 type Pending =
   | { kind: "replace"; next: Experiment; imported: boolean; label: string; saved?: SavedExperimentSummary }
@@ -106,6 +107,27 @@ function ConditionFields({ prefix, value, onChange }: {
 
 function Evidence({ value, empty = "Not recorded" }: { value: string; empty?: string }) {
   return value.length ? <pre className={styles.evidence} tabIndex={0}>{value}</pre> : <p className={styles.missing}>{empty}</p>;
+}
+
+function ExperimentTags({ tags, onChange }: { tags: string[]; onChange: (tags: string[]) => void }) {
+  const [draft, setDraft] = useState("");
+  const reportError = useContext(FieldErrorContext);
+  function add() {
+    const tag = draft.trim();
+    if (!tag) return;
+    if (tag.length > LIMITS.maxMetadataLength) {
+      reportError(`A tag can contain up to ${LIMITS.maxMetadataLength.toLocaleString()} characters. Existing tags were kept.`);
+      return;
+    }
+    if (tags.includes(tag)) { setDraft(""); return; }
+    if (tags.length >= LIMITS.maxTags) { reportError(`An experiment can have up to ${LIMITS.maxTags} tags.`); return; }
+    onChange([...tags, tag]);
+    setDraft("");
+  }
+  return <div className={styles.tagsEditor}>
+    <div className={styles.field}><label htmlFor="experiment-tag">Experiment tags</label><div className={styles.tagInput}><input id="experiment-tag" value={draft} autoComplete="off" spellCheck={false} onChange={(event) => setDraft(event.target.value)} onKeyDown={(event) => { if (event.key === "Enter") { event.preventDefault(); add(); } }} aria-describedby="experiment-tags-help" /><button type="button" className="button-secondary" onClick={add} disabled={!draft.trim()}>Add tag</button></div><p id="experiment-tags-help" className={styles.help}>Group saved research in the library. Tag edits are saved only when you choose Save locally.</p></div>
+    {!!tags.length && <ul className={styles.tagsList} aria-label="Current tags">{tags.map((tag, index) => <li key={`${index}-${tag}`}><span>{tag || "Empty imported tag"}</span><button type="button" onClick={() => onChange(tags.filter((_, position) => position !== index))} aria-label={`Remove tag ${tag || "empty imported tag"}`}><span aria-hidden="true">×</span></button></li>)}</ul>}
+  </div>;
 }
 
 function utcInput(value: string | null) {
@@ -263,6 +285,7 @@ export function ResearchWorkbench({ selectedLabId, initialAccountStatus }: { sel
   function unlocked(session: ResearchVaultSession) {
     vaultRef.current = session;
     setVaultSession(session);
+    if (!currentSession.current.experiment) setView("library");
     setStatus("Local vault unlocked. Choose Save locally to store the current draft; nothing was saved automatically.");
   }
 
@@ -344,6 +367,7 @@ export function ResearchWorkbench({ selectedLabId, initialAccountStatus }: { sel
     setSaveConflict(false);
     setLibraryOpen(false);
     setVaultGeneration((value) => value + 1);
+    setView("library");
     setStatus("Vault locked. Decrypted records are no longer displayed. Unlock to open a saved experiment.");
   }
 
@@ -553,13 +577,16 @@ export function ResearchWorkbench({ selectedLabId, initialAccountStatus }: { sel
     <input ref={fileInput} data-testid="restore-experiment" className={styles.hiddenInput} type="file" accept=".json,application/json" aria-label="Restore private JSON backup" tabIndex={-1}
       onChange={(event) => { const file = event.target.files?.[0]; event.target.value = ""; void restoreFile(file); }} />
 
-    {!experiment ? <section className={styles.empty} aria-labelledby="start-heading">
+    <div className={styles.workToolbar}><div className={styles.viewSwitch} role="group" aria-label="Workbench view">{(["compose", "review", "compare", "export", "library"] as const).map((item) => <button type="button" key={item} aria-pressed={view === item} disabled={!mounted || (item !== "compose" && item !== "library" && !experiment)} onClick={() => setView(item)}>{item === "compose" ? "Compose" : item === "review" ? "Review" : item === "compare" ? "Compare" : item === "export" ? "Export" : "Research library"}</button>)}</div>{experiment && view !== "library" && <button type="button" className="button-primary" onClick={() => addAttempt()} disabled={experiment.attempts.length >= LIMITS.maxAttempts}>New attempt <span aria-hidden="true">+</span></button>}</div>
+
+    {view === "library" ? <ResearchLibrary key={`library-${vaultGeneration}`} session={vaultSession} refresh={libraryRefresh} busy={saving} onManageVault={() => setLibraryOpen(true)} onOpenExperiment={(next, summary) => requestReplacement(next, true, "Open this saved experiment", summary)} /> : !experiment ? <section className={styles.empty} aria-labelledby="start-heading">
       <div><p className="eyebrow">One experiment. A useful record.</p><h2 id="start-heading">Keep the question<br />beside the evidence.</h2><p>You run the target elsewhere. Record what you sent, what you observed and what changed between attempts.</p></div>
       <div className={styles.emptyActions}><button type="button" className="button-primary" disabled={!mounted} onClick={startBlank}>Start an experiment <span aria-hidden="true">↗</span></button><button type="button" className="button-secondary" disabled={!mounted} onClick={() => requestReplacement(createSyntheticExperiment(), false, "Load the synthetic example")}>Load synthetic example</button><button type="button" className={styles.textButton} disabled={!mounted} onClick={() => fileInput.current?.click()}>Open a JSON backup</button><p>Examples are invented and labelled. Only your own supported NestCipher backup format can be restored.</p></div>
     </section> : <>
       {synthetic && <p className={styles.synthetic}>Synthetic example — authored exercise content, not a real model or challenge run.</p>}
       <section className={styles.setup} aria-labelledby="setup-heading">
         <h2 id="setup-heading" className="sr-only">Experiment setup</h2><div className={styles.experimentBar}><Field id="experiment-title" label="Experiment title" value={experiment.title} onChange={(title) => updateDocument((current) => ({ ...current, title }))} /><div className={styles.utilityActions}><button type="button" className={styles.textButton} onClick={() => fileInput.current?.click()} disabled={saving}>Restore JSON</button><button type="button" className={styles.textButton} onClick={startBlank} disabled={saving}>New experiment</button></div></div>
+        <ExperimentTags key={experiment.id} tags={experiment.tags} onChange={(tags) => updateDocument((current) => ({ ...current, tags }))} />
         {!experiment.attempts.length && <button type="button" className="button-primary" onClick={() => addAttempt()}>Create first attempt from defaults</button>}
         <details className={styles.details} open={defaultsOpen} onToggle={(event) => setDefaultsOpen(event.currentTarget.open)}><summary><span>Edit experiment defaults</span> <span className={styles.summaryNote}>{experiment.defaults.target || "Target unspecified"}</span></summary><p className={styles.help}>Copied when an attempt is created; existing snapshots do not change. A title and one nonblank input prepare a Markdown note. Partial drafts can always be saved or backed up.</p><ConditionFields prefix="defaults" value={experiment.defaults} onChange={(field, value) => updateDocument((current) => ({ ...current, defaults: { ...current.defaults, [field]: value } }))} /></details>
       </section>
@@ -572,8 +599,6 @@ export function ResearchWorkbench({ selectedLabId, initialAccountStatus }: { sel
           <div className={styles.disclosureStatus}><span className={styles.privateBadge}>Private · publish: false</span><p>{disclosureText}</p>{disclosure?.publicNotBefore && <p>Earliest disclosure date: <strong>{new Date(disclosure.publicNotBefore).toISOString().replace("T", " ").replace(".000Z", " UTC")}</strong></p>}<p className={styles.help}>There is no share or publish action. Reaching a date never publishes or changes the privacy of a record.</p></div>
         </div>
       </section></details>
-
-      <div className={styles.workToolbar}><div className={styles.viewSwitch} role="group" aria-label="Workbench view">{(["compose", "review", "compare", "export"] as const).map((item) => <button type="button" key={item} aria-pressed={view === item} onClick={() => setView(item)}>{item === "compose" ? "Compose" : item === "review" ? "Review" : item === "compare" ? "Compare" : "Export"}</button>)}</div><button type="button" className="button-primary" onClick={() => addAttempt()} disabled={experiment.attempts.length >= LIMITS.maxAttempts}>New attempt <span aria-hidden="true">+</span></button></div>
 
       {view === "review" && <ResearchAttemptReview key={experiment.id} experiment={experiment} onOpenAttempt={openReviewedAttempt} onCompareParent={compareReviewedParent} />}
 
@@ -639,7 +664,7 @@ export function ResearchWorkbench({ selectedLabId, initialAccountStatus }: { sel
     </>}
 
     <footer className={styles.toolFooter}><p>Manual research, explicit saving, portable private files. Optional encrypted account backup; research stays private.</p><a href="/community" target="_blank" rel="noopener noreferrer">Open the field guide <span aria-hidden="true">↗</span></a><a href="/privacy" target="_blank" rel="noopener noreferrer">Read privacy details <span aria-hidden="true">↗</span></a></footer>
-    <ResearchVaultPanel key={vaultGeneration} open={libraryOpen} session={vaultSession} refresh={libraryRefresh} initialAccountStatus={initialAccountStatus} onClose={() => setLibraryOpen(false)} onUnlocked={unlocked} onOpenExperiment={(next, summary) => requestReplacement(next, true, "Open this saved experiment", summary)} onDeleted={savedCopyDeleted} onLock={requestLock} />
+    <ResearchVaultPanel key={`vault-${vaultGeneration}`} open={libraryOpen} session={vaultSession} refresh={libraryRefresh} initialAccountStatus={initialAccountStatus} onClose={() => setLibraryOpen(false)} onUnlocked={unlocked} onOpenExperiment={(next, summary) => requestReplacement(next, true, "Open this saved experiment", summary)} onDeleted={savedCopyDeleted} onLock={requestLock} />
     <dialog ref={dialog} className={styles.dialog} aria-labelledby="replace-heading" onCancel={(event) => { event.preventDefault(); if (!saving) setPending(null); }}>
       <p className="eyebrow">Keep a copy before discarding</p><h2 id="replace-heading">{pending?.label ?? "Replace current work"}</h2><p>{pending?.kind === "delete" ? "This removes the attempt and clears references from its variants. Their remaining evidence is preserved." : pending?.kind === "lock" ? "Locking closes the decrypted working draft. Saved records remain encrypted; unsaved changes would be lost. Save or download a private backup before continuing." : "The working draft will be replaced. Unsaved changes exist only in memory; save locally or download a private backup to keep them."}</p><div className={styles.dialogActions}><button type="button" className="button-secondary" onClick={() => setPending(null)} disabled={saving}>Keep current session</button>{vaultSession && pending?.kind !== "delete" && <button type="button" className="button-primary" onClick={() => void saveAndContinue()} disabled={saving}>{saving ? "Saving…" : "Save and continue"}</button>}<button type="button" className="button-secondary" onClick={backup} disabled={saving}>Download current backup</button><button type="button" className="button-secondary" onClick={() => confirmPending()} disabled={saving}>{pending?.kind === "delete" ? "Delete this attempt" : pending?.kind === "lock" ? "Discard changes and lock" : "Replace current session"}</button></div><p className={styles.help}>Downloads are readable private files. Check that the file is available before discarding your work.</p>{status && <p role="status">{status}</p>}{error && <p role="alert" className={styles.error}>{error}</p>}
     </dialog>

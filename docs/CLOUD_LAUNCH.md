@@ -125,7 +125,11 @@ to that record; Compare with parent selects its existing parent relationship.
 Review changes the view, not the evidence or reported status. Counts can overlap
 and do not measure success or research quality.
 
-The Local library searches saved titles only while unlocked. Save locally before
+The Research library searches saved metadata and evidence only while unlocked.
+Vault setup separates new-vault creation from cloud restore. Selected saved
+copies can also be previewed and downloaded as a readable, private linked
+Obsidian pack; this ZIP is not an encrypted backup or restore format. See
+[the library workflow](RESEARCH_LIBRARY.md). Save locally before
 an explicit cloud backup; unsaved working drafts are excluded. All records stay
 private, including during a live challenge. The minimum disclosure restriction
 remains 30 full days after the actual confirmed challenge end, with explicit

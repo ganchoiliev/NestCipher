@@ -25,11 +25,16 @@
 .form button { align-self: start; margin-top: 8px; }
 .help, .form .help { color: var(--text-muted); font-size: 14px; line-height: 1.6; overflow-wrap: anywhere; }
 .empty { color: var(--text-secondary); padding-block: 28px; font-size: 16px; line-height: 1.6; }
-.search { margin-block: 20px; }
-.search label { display: block; color: var(--text-secondary); font: 12px/1.6 var(--font-dm-mono),monospace; margin-bottom: 8px; }
-.search > div { display: flex; gap: 12px; }
-.search input { min-width: 0; width: 100%; min-height: 48px; border: 1px solid var(--border-hover); padding: 12px 14px; background: var(--bg-primary); color: var(--text-primary); font: 16px/1.5 var(--font-barlow),sans-serif; border-radius: 0; }
-.search button { flex-shrink: 0; }
+.setup, .restoreIntro { border-top: 1px solid var(--border-hover); padding-top: 24px; margin-bottom: 28px; }
+.setup h3, .restoreIntro h3 { font-size: 22px; font-weight: 600; line-height: 1.4; }
+.setup > p, .restoreIntro > p { color: var(--text-secondary); font-size: 16px; line-height: 1.6; margin-top: 12px; }
+.choices { display: grid; grid-template-columns: repeat(2,minmax(0,1fr)); gap: 16px; margin-top: 20px; }
+.choice { display: flex; flex-direction: column; text-align: left; align-items: start; gap: 12px; padding: 22px; color: var(--text-secondary); border: 1px solid var(--border-hover); background: var(--bg-primary); font-size: 16px; line-height: 1.6; }
+.choice:hover { border-color: var(--accent); }
+.choice .choiceLabel { color: var(--text-primary); font-size: 21px; font-weight: 600; line-height: 1.4; }
+.choice .choiceAction { color: var(--accent); font: 12px/1.6 var(--font-dm-mono),monospace; margin-top: auto; padding-top: 8px; }
+.backButton { align-self: start; min-height: 48px; min-width: 44px; color: var(--text-secondary); border-bottom: 1px solid var(--border-hover); font-size: 14px; padding: 10px 0; margin-bottom: 16px; }
+.form .backButton { margin-top: 0; }
 .panel button:disabled { opacity: .55; cursor: not-allowed; }
-@media (max-width: 760px) { .panel { padding: 20px; }.header { flex-wrap: wrap; }.header h2 { font-size: 40px; }.records li { flex-direction: column; align-items: start; }.confirm { padding: 16px; } }
+@media (max-width: 760px) { .panel { padding: 20px; }.header { flex-wrap: wrap; }.header h2 { font-size: 40px; }.records li { flex-direction: column; align-items: start; }.confirm { padding: 16px; }.choices { grid-template-columns: 1fr; }.choice { padding: 18px; } }
 @media (prefers-reduced-motion: reduce) { .panel *, .panel *::before, .panel *::after { transition: none !important; animation: none !important; } }
