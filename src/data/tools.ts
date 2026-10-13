@@ -54,9 +54,9 @@ export const tools: readonly ToolDefinition[] = [
     category: "research",
     href: "/tools/research-workbench",
     title: "Research Workbench",
-    description: "Turn a test attempt into a private reproduction record.",
+    description: "Plan an experiment, follow the evidence and keep a private record.",
     detail:
-      "Record scope, exact input, observations, and repeat attempts in this session. Export a private Markdown or JSON file; no account or model API is required.",
+      "Use Prompt Studio, exact-text comparisons and Experiment Map. Save explicitly to an encrypted local library and export linked Obsidian notes. Local research needs no account; encrypted cloud backup is optional.",
     icon: "book",
   },
 ];

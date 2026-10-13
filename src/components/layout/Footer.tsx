@@ -21,6 +21,9 @@ export function Footer() {
           {/* eslint-disable-next-line @next/next/no-html-link-for-pages */}
           <a href="/labs">Labs</a>
           <a href="/community">Field guide</a>
+          {/* Fresh navigation restores instrumentation after leaving private research. */}
+          {/* eslint-disable-next-line @next/next/no-html-link-for-pages */}
+          <a href="/casebook">Casebook</a>
           <a href="/about">About</a>
           <a href="/privacy">Privacy</a>
         </nav>

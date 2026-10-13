@@ -286,6 +286,21 @@ textarea::placeholder {
     font-size: 17px;
   }
 }
+@media (max-width: 760px) {
+  /* A readable size also prevents iOS focus zoom. Keep each field's family and
+     line-height while enforcing this invariant over component typography. */
+  input:not([type]),
+  input[type="text"],
+  input[type="email"],
+  input[type="password"],
+  input[type="url"],
+  input[type="search"],
+  input[type="datetime-local"],
+  textarea,
+  select {
+    font-size: 16px !important;
+  }
+}
 @media (prefers-reduced-motion: reduce) {
   html {
     scroll-behavior: auto;

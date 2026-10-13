@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
+import { isUnknownCatalogPath } from "@/lib/research-catalog-routes";
 import {
   buildCsp,
   generateNonce,
@@ -25,9 +26,12 @@ export function proxy(request: NextRequest) {
   requestHeaders.set("x-nonce", nonce);
   requestHeaders.set("Content-Security-Policy", csp);
 
-  const response = NextResponse.next({
-    request: { headers: requestHeaders },
-  });
+  // Unknown closed-catalog IDs use an ordinary SSR recovery page. Keeping the
+  // status and nonce here avoids the framework's empty dynamic error shell.
+  const missing = isUnknownCatalogPath(request.nextUrl.pathname);
+  const response = missing
+    ? NextResponse.rewrite(new URL("/404", request.url), { status: 404, request: { headers: requestHeaders } })
+    : NextResponse.next({ request: { headers: requestHeaders } });
   response.headers.set("Content-Security-Policy", csp);
   return response;
 }
