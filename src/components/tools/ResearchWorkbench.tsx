@@ -22,6 +22,7 @@ import { createLabExperiment, getResearchLab, type ResearchLabId } from "@/lib/r
 import { ResearchVaultPanel } from "./ResearchVaultPanel";
 import { ResearchLibrary } from "@/components/research/ResearchLibrary";
 import { PromptStudio } from "@/components/research/PromptStudio";
+import { ExperimentMap } from "@/components/research/ExperimentMap";
 import { ResearchTextDiff } from "./ResearchTextDiff";
 import { ReportAttachments } from "./ReportAttachments";
 import { ResearchAttemptReview } from "./ResearchAttemptReview";
@@ -164,6 +165,7 @@ export function ResearchWorkbench({ selectedLabId, initialAccountStatus }: { sel
   const [experiment, setExperiment] = useState<Experiment | null>(null);
   const [activeId, setActiveId] = useState<string | null>(null);
   const [view, setView] = useState<View>("compose");
+  const [reviewMode, setReviewMode] = useState<"register" | "map">("register");
   const [compareA, setCompareA] = useState<string | null>(null);
   const [compareB, setCompareB] = useState<string | null>(null);
   const [omitted, setOmitted] = useState<EvidenceField[]>([]);
@@ -302,6 +304,7 @@ export function ResearchWorkbench({ selectedLabId, initialAccountStatus }: { sel
     setOmitted([]);
     setIncludeReports(true);
     setComparisonView("originals");
+    setReviewMode("register");
     setView("compose");
     setPending(null);
     setError("");
@@ -431,6 +434,7 @@ export function ResearchWorkbench({ selectedLabId, initialAccountStatus }: { sel
     setLibraryOpen(false);
     setVaultGeneration((value) => value + 1);
     setView("library");
+    setReviewMode("register");
     setStatus("Vault locked. Decrypted records are no longer displayed. Unlock to open a saved experiment.");
   }
 
@@ -490,6 +494,12 @@ export function ResearchWorkbench({ selectedLabId, initialAccountStatus }: { sel
     setActiveId(id);
     setView("compose");
     window.requestAnimationFrame(() => attemptHeading.current?.focus());
+  }
+
+  function prepareMappedNext(id: string) {
+    if (savingRef.current) return;
+    const parent = experiment?.attempts.find((attempt) => attempt.id === id);
+    if (parent) addAttempt(parent);
   }
 
   function compareReviewedParent(id: string, parentId: string) {
@@ -672,7 +682,14 @@ export function ResearchWorkbench({ selectedLabId, initialAccountStatus }: { sel
         </div>
       </section></details>
 
-      {view === "review" && <ResearchAttemptReview key={experiment.id} experiment={experiment} onOpenAttempt={openReviewedAttempt} onCompareParent={compareReviewedParent} />}
+      {view === "review" && <>
+        <div className={styles.reviewModes} role="group" aria-label="Review views">
+          <button type="button" aria-pressed={reviewMode === "register"} onClick={() => setReviewMode("register")}>Attempt review</button>
+          <button type="button" aria-pressed={reviewMode === "map"} onClick={() => setReviewMode("map")}>Experiment map</button>
+        </div>
+        {reviewMode === "register" ? <ResearchAttemptReview key={experiment.id} experiment={experiment} onOpenAttempt={openReviewedAttempt} onCompareParent={compareReviewedParent} />
+          : <ExperimentMap key={experiment.id} experiment={experiment} onOpenAttempt={openReviewedAttempt} onCompareParent={compareReviewedParent} onPrepareNext={prepareMappedNext} busy={saving} />}
+      </>}
 
       {view === "compose" && <div className={styles.workspace}>
         <aside className={styles.rail} aria-labelledby="attempts-heading"><div className={styles.railHeading}><h2 id="attempts-heading">Attempts</h2><span>{experiment.attempts.length} / {LIMITS.maxAttempts}</span></div>
