@@ -502,6 +502,12 @@ export function HeadersScanner() {
               can copy.
             </p>
           </div>
+          <div className="mt-6 border-t border-border-subtle pt-5">
+            <p className="font-mono text-xs text-text-muted">SEVERAL SITES</p>
+            <Link href="/tools/headers-scanner/compare" className="text-link mt-1">
+              Compare up to six <span aria-hidden="true">↗</span>
+            </Link>
+          </div>
         </aside>
       </div>
 
